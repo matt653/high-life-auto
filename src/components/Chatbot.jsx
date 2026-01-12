@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './Chatbot.css';
 
 // Initialize Gemini API
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+// Initialize Gemini API
+const API_KEY = "AIzaSyBjyT8TsGpcA8ureyU989vbHqWKywBPAPg"; // Hardcoded for reliability
 const SHEET_URL = import.meta.env.VITE_GOOGLE_SHEET_URL;
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -54,7 +55,8 @@ const Chatbot = () => {
     // Initialize Chat Session
     useEffect(() => {
         if (API_KEY) {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            // Use flash-latest to avoid 404s
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
             const chat = model.startChat({
                 history: [
                     {

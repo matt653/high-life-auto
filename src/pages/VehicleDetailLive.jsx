@@ -7,6 +7,7 @@ const VehicleDetailLive = () => {
     const { id } = useParams();
     const [car, setCar] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { toggleGarage, isInGarage } = useGarage();
     const [vehicleGrade, setVehicleGrade] = useState(null);
 
     useEffect(() => {
@@ -133,9 +134,29 @@ const VehicleDetailLive = () => {
 
                         {/* Right: Info & Story */}
                         <div>
-                            <span className="badge" style={{ backgroundColor: 'var(--color-gold)', color: 'white' }}>
-                                ${car.price > 0 ? car.price.toLocaleString() : 'CALL FOR PRICE'}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                <span className="badge" style={{ backgroundColor: 'var(--color-gold)', color: 'white', padding: '0.5rem 1rem', fontSize: '1.25rem' }}>
+                                    ${car.price > 0 ? car.price.toLocaleString() : 'CALL FOR PRICE'}
+                                </span>
+                                <button
+                                    onClick={() => toggleGarage(car)}
+                                    style={{
+                                        background: isInGarage(car.id) ? '#fee2e2' : 'white',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '50%',
+                                        width: '48px',
+                                        height: '48px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        color: isInGarage(car.id) ? '#ef4444' : '#666'
+                                    }}
+                                    title={isInGarage(car.id) ? "Remove from Garage" : "Add to Garage"}
+                                >
+                                    <Heart fill={isInGarage(car.id) ? '#ef4444' : 'none'} size={24} />
+                                </button>
+                            </div>
                             <h1 style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>{car.year} {car.make} {car.model}</h1>
                             <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#666' }}>
                                 {car.mileage > 0 ? `${car.mileage.toLocaleString()} Miles` : 'Mileage TBD'} • VIN: {car.vin}
@@ -204,7 +225,7 @@ const VehicleDetailLive = () => {
                             )}
 
                             {/* Consumer Education */}
-                            {vehicleGrade?.consumerEducation && (
+                            {(vehicleGrade?.buyerTips || vehicleGrade?.consumerEducation) && (
                                 <div style={{
                                     backgroundColor: '#fff3cd',
                                     border: '2px solid #ffc107',
@@ -213,10 +234,13 @@ const VehicleDetailLive = () => {
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                                         <AlertTriangle size={24} color="#856404" />
-                                        <h3 style={{ margin: 0, color: '#856404' }}>Buyer Education & Pro Tips</h3>
+                                        <h3 style={{ margin: 0, color: '#856404' }}>Miriam's Mechanic Notes: Common Known Issues</h3>
                                     </div>
+                                    <p style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '1rem', fontStyle: 'italic' }}>
+                                        (These are common things for this model year/engine, not necessarily present on this specific car. We checked them!)
+                                    </p>
                                     <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#856404' }}>
-                                        {vehicleGrade.consumerEducation.map((tip, i) => (
+                                        {(vehicleGrade.buyerTips || vehicleGrade.consumerEducation).map((tip, i) => (
                                             <li key={i} style={{ marginBottom: '0.5rem' }}>{tip}</li>
                                         ))}
                                     </ul>

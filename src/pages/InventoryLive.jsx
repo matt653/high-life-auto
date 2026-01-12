@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Filter, AlertCircle, RefreshCw, Heart } from 'lucide-react';
 import { loadInventoryFromFrazerCSV } from '../services/FrazerFeedService';
+import { useGarage } from '../context/GarageContext';
 
 const InventoryLive = () => {
     const [inventory, setInventory] = useState([]);
@@ -9,6 +10,7 @@ const InventoryLive = () => {
     const [filter, setFilter] = useState('');
     const [priceRange, setPriceRange] = useState(25000);
     const [lastSync, setLastSync] = useState(null);
+    const { toggleGarage, isInGarage } = useGarage();
 
     useEffect(() => {
         loadInventory();
@@ -18,8 +20,15 @@ const InventoryLive = () => {
         setLoading(true);
         try {
             const data = await loadInventoryFromFrazerCSV('/frazer-inventory.csv');
-            // Sort by price: Low to High by default
-            const sortedData = data.sort((a, b) => (a.price || 0) - (b.price || 0));
+            // Sort by price: Low to High by default, forcing 0 (Call for Price) to the bottom
+            const sortedData = data.sort((a, b) => {
+                const priceA = a.price || 0;
+                const priceB = b.price || 0;
+                if (priceA === 0 && priceB === 0) return 0;
+                if (priceA === 0) return 1;
+                if (priceB === 0) return -1;
+                return priceA - priceB;
+            });
             setInventory(sortedData);
             setLastSync(new Date());
 
@@ -38,7 +47,14 @@ const InventoryLive = () => {
             car.model?.toLowerCase().includes(filter.toLowerCase()) ||
             car.year?.toString().includes(filter)) &&
         (car.price || 0) <= priceRange
-    ).sort((a, b) => (a.price || 0) - (b.price || 0));
+    ).sort((a, b) => {
+        const priceA = a.price || 0;
+        const priceB = b.price || 0;
+        if (priceA === 0 && priceB === 0) return 0;
+        if (priceA === 0) return 1;
+        if (priceB === 0) return -1;
+        return priceA - priceB;
+    });
 
     return (
         <div className="inventory-page">
@@ -161,6 +177,35 @@ const InventoryLive = () => {
                                     {/* Middle: Primary Image */}
                                     <Link to={`/vehicle/${car.stock}`} style={{ display: 'block', textDecoration: 'none' }}>
                                         <div style={{ position: 'relative', height: '240px', overflow: 'hidden' }}>
+                                            {/* Heart Button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation(); // Safe guard
+                                                    toggleGarage(car);
+                                                }}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '0.5rem',
+                                                    right: '0.5rem',
+                                                    zIndex: 10,
+                                                    background: 'rgba(255,255,255,0.9)',
+                                                    borderRadius: '50%',
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                                                    color: isInGarage(car.id) ? '#ef4444' : '#ccc'
+                                                }}
+                                                title={isInGarage(car.id) ? "Remove from Garage" : "Add to Garage"}
+                                            >
+                                                <Heart fill={isInGarage(car.id) ? '#ef4444' : 'none'} size={24} />
+                                            </button>
+
                                             {car.photos && car.photos.length > 0 ? (
                                                 <img
                                                     src={car.photos[0]}

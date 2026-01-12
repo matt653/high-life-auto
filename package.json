@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "sync": "node scripts/sync-inventory.js",
-    "dev": "npm run sync && node node_modules/vite/bin/vite.js",
-    "build": "npm run sync && node node_modules/vite/bin/vite.js build",
+    "sync": "node scripts/enhance-inventory.js",
+    "dev": "node node_modules/vite/bin/vite.js",
+    "build": "node node_modules/vite/bin/vite.js build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

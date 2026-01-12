@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Car } from 'lucide-react';
+import { Menu, X, Car, Heart } from 'lucide-react';
+import { useGarage } from '../context/GarageContext';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const { savedVehicles } = useGarage();
 
     const navLinks = [
         { name: 'Inventory', path: '/inventory' },
+        { name: 'Garage', path: '/garage' }, // Added Garage
         { name: 'Our Why', path: '/about' },
         { name: 'Contact', path: '/contact' },
     ];
@@ -48,9 +51,24 @@ const Navbar = () => {
                         <Link
                             key={link.name}
                             to={link.path}
-                            style={{ marginLeft: '2rem', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}
+                            style={{ marginLeft: '2rem', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                         >
                             {link.name}
+                            {link.name === 'Garage' && savedVehicles.length > 0 && (
+                                <span style={{
+                                    backgroundColor: 'var(--color-accent)',
+                                    color: 'white',
+                                    borderRadius: '50%',
+                                    width: '20px',
+                                    height: '20px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.75rem'
+                                }}>
+                                    {savedVehicles.length}
+                                </span>
+                            )}
                         </Link>
                     ))}
                 </div>
