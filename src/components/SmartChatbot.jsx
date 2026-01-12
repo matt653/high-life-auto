@@ -69,27 +69,44 @@ const PIPELINE_STAGES = [
 ];
 
 // --- AI Engine ---
-const genAI = new GoogleGenerativeAI(API_KEY);
-
+// Initialize dynamically to catch env var changes
 const fetchGeminiResponse = async (userText, systemInstruction, history = []) => {
     try {
+        // Fallback to hardcoded key if env var fails to load
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyBjyT8TsGpcA8ureyU989vbHqWKywBPAPg";
+
+        if (!apiKey) throw new Error("Missing HighLife API Key");
+
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-2.0-flash", // Updated to matches available models for this API key
             systemInstruction: systemInstruction
         });
 
+        // Gemini API requires history to start with 'user'. 
+        // We filter out any leading 'model' messages from the history array.
+        const formattedHistory = history.map(msg => ({
+            role: msg.role === 'ai' ? 'model' : 'user',
+            parts: [{ text: msg.text }]
+        }));
+
+        // Find the index of the first 'user' message
+        const firstUserIndex = formattedHistory.findIndex(msg => msg.role === 'user');
+
+        // If no user message is found (e.g. only AI greeting), pass empty history
+        // If found, slice from that index to ensure we start with user
+        const validHistory = firstUserIndex !== -1 ? formattedHistory.slice(firstUserIndex) : [];
+
         const chat = model.startChat({
-            history: history.map(msg => ({
-                role: msg.role === 'ai' ? 'model' : 'user',
-                parts: [{ text: msg.text }]
-            }))
+            history: validHistory
         });
 
         const result = await chat.sendMessage(userText);
-        return result.response.text();
+        const response = await result.response;
+        return response.text();
     } catch (err) {
         console.error("Gemini Error:", err);
-        return "I'm having a little trouble connecting to the dealership brain. Can you say that again?";
+        return `System Error: ${err.message || "Connection Failed"}. Please contact the manager.`;
     }
 };
 
@@ -231,18 +248,17 @@ const SmartChatbot = () => {
 // --- SUB COMPONENTS ---
 
 const VisitorChat = ({ inventory, knowledge, onLeadUpdate }) => {
+    // Start fresh every time the component mounts (Page Refresh = New Chat)
+    // This prevents "bad history" from crashing the bot
     const [messages, setMessages] = useState([{ role: 'ai', text: "Hey! High Life Auto here. I'm the digital helper. I'm honest, I don't sugar-coat things. What car are you looking at today?", createdAt: new Date() }]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [sessionId] = useState(() => localStorage.getItem('hla_session_id') || crypto.randomUUID());
+
+    // Create a temporary session ID for this specific browse session
+    const [sessionId] = useState(() => crypto.randomUUID());
     const scrollRef = useRef(null);
 
-    useEffect(() => {
-        localStorage.setItem('hla_session_id', sessionId);
-        const history = mockDb.get(`chat_${sessionId}`);
-        if (history && history.length > 0) setMessages(history);
-    }, [sessionId]);
-
+    // Auto-scroll to bottom of chat
     const scrollToBottom = () => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -253,10 +269,11 @@ const VisitorChat = ({ inventory, knowledge, onLeadUpdate }) => {
         if (!input.trim()) return;
         const userText = input;
 
-        // Add User Message
+        // Add User Message to UI
         const newMsgs = [...messages, { role: 'user', text: userText, createdAt: new Date() }];
         setMessages(newMsgs);
-        mockDb.set(`chat_${sessionId}`, newMsgs);
+
+        // We do NOT save to localStorage anymore, keeping it "fresh" per browsing session
 
         setInput('');
         setIsTyping(true);
@@ -289,7 +306,6 @@ const VisitorChat = ({ inventory, knowledge, onLeadUpdate }) => {
 
         const finalMsgs = [...newMsgs, { role: 'ai', text: responseText, createdAt: new Date() }];
         setMessages(finalMsgs);
-        mockDb.set(`chat_${sessionId}`, finalMsgs);
         setIsTyping(false);
 
         // Sync to CRM

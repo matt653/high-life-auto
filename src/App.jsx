@@ -31,7 +31,7 @@ function App() {
           <div className="app">
             <Navbar />
             <StickyLeadBar />
-            <SmartChatbot />
+            {/* <SmartChatbot /> - Temporarily disabled */}
             <main>
               <Suspense fallback={<PageLoader />}>
                 <Routes>

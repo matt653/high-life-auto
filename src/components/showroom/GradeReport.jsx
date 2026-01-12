@@ -18,7 +18,7 @@ const CategoryRow = ({ category, icon }) => {
                 <div>
                     <h4 className="font-bold text-gray-800">{category.name}</h4>
                     <div className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-sm font-black border mt-1 ${getGradeColor(category.grade)}`}>
-                        Grade: {category.grade} <span className="text-xs opacity-50 ml-1">({category.score}/100)</span>
+                        Grade: {category.grade}
                     </div>
                 </div>
             </div>
@@ -58,7 +58,6 @@ const GradeReport = ({ vehicle, grade, onClose }) => {
                             <div>
                                 <h3 className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-1">Overall Grade</h3>
                                 <div className="text-7xl font-black tracking-tighter">{grade.overallGrade}</div>
-                                <div className="text-2xl font-medium text-blue-200 opacity-90">{grade.overallScore}/100</div>
                             </div>
                             <div className="mt-6 pt-6 border-t border-white/10">
                                 <p className="text-sm text-blue-100 leading-snug italic">"{grade.summary}"</p>

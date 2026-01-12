@@ -280,7 +280,7 @@ const VehicleDetailLive = () => {
                                 </div>
                             </div>
 
-                            <a href="https://www.youtube.com/@HighLifeAuto" target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', padding: '1.25rem', textAlign: 'center' }}>
+                            <a href="https://youtube.com/playlist?list=PLl7IO3qjXvk6YT6yYeClM1Pn24H0uWGj4&si=fjk0H7RWbmkXIVJL" target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', padding: '1.25rem', textAlign: 'center' }}>
                                 Watch More on YouTube
                             </a>
                         </div>

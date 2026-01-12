@@ -57,7 +57,10 @@ export const loadInventoryFromFrazerCSV = async () => {
                 engine: record['Engine'] || '',
                 bodyStyle: record['Body Style'] || '',
                 interiorColor: record['Interior Color'] || '',
+                bodyStyle: record['Body Style'] || '',
+                interiorColor: record['Interior Color'] || '',
                 exteriorColor: record['Exterior Color'] || '',
+                options: record['Option List'] || '', // Mapped from CSV Column W
             };
 
             // Generate Fallback AI Data

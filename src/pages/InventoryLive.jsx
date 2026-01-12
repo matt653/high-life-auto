@@ -299,6 +299,17 @@ const InventoryLive = () => {
                     </div>
                 </section>
             )}
+
+            <footer style={{ backgroundColor: '#1e293b', color: 'white', padding: '3rem 0', marginTop: 'auto' }}>
+                <div className="container" style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1.5rem' }}>
+                        <a href="https://facebook.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Facebook</a>
+                        <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Twitter</a>
+                        <a href="https://instagram.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Instagram</a>
+                        <a href="https://youtube.com/playlist?list=PLl7IO3qjXvk6YT6yYeClM1Pn24H0uWGj4&si=fjk0H7RWbmkXIVJL" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>YouTube</a>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 };

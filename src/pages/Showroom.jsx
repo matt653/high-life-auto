@@ -116,7 +116,7 @@ const Showroom = () => {
                         youtubeUrl: v.youtubeUrl || '',
                         imageUrls: v.photos || [],
                         comments: v.rawComments || '',
-                        options: '',
+                        options: v.options || '', // Now correctly pulling from service
                         type: v.bodyStyle,
                     }));
 

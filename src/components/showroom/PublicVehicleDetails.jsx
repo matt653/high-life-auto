@@ -93,17 +93,14 @@ const PublicVehicleDetails = ({ vehicle, onClose }) => {
 
                                     <div className="flex flex-col sm:flex-row gap-6 relative z-10 items-start">
                                         {/* Grade Block */}
-                                        <div className="flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-0 shrink-0 border-b sm:border-b-0 sm:border-r border-gray-700 pb-4 sm:pb-0 sm:pr-6">
+                                        <div className="flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-0 shrink-0 sm:pr-6">
                                             <div>
                                                 <div className="text-blue-400 font-bold uppercase tracking-wider text-[10px] mb-0.5">Overall Grade</div>
                                                 <div className={`text-6xl font-black leading-none ${getGradeColor(grade.overallGrade)}`}>
                                                     {grade.overallGrade}
                                                 </div>
                                             </div>
-                                            <div className="sm:mt-2">
-                                                <div className="text-gray-400 text-xs uppercase font-bold tracking-wider">Score</div>
-                                                <div className="text-xl font-bold text-white">{grade.overallScore}<span className="text-gray-500 text-sm">/100</span></div>
-                                            </div>
+                                            {/* Numeric Score Removed per User Request */}
                                         </div>
 
                                         {/* Summary & Categories */}
