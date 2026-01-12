@@ -3,12 +3,14 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SEOProvider from './components/SEOProvider';
 import StickyLeadBar from './components/StickyLeadBar';
+import SmartChatbot from './components/SmartChatbot';
 
 import { GarageProvider } from './context/GarageContext';
 
 // Code Splitting for Performance
 const Homepage = lazy(() => import('./pages/Homepage'));
 const InventoryLive = lazy(() => import('./pages/InventoryLive'));
+const Showroom = lazy(() => import('./pages/Showroom'));
 const VehicleDetailLive = lazy(() => import('./pages/VehicleDetailLive'));
 const About = lazy(() => import('./pages/About'));
 const Financing = lazy(() => import('./pages/Financing'));
@@ -29,11 +31,13 @@ function App() {
           <div className="app">
             <Navbar />
             <StickyLeadBar />
+            <SmartChatbot />
             <main>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Homepage />} />
                   <Route path="/inventory" element={<InventoryLive />} />
+                  <Route path="/showroom" element={<Showroom />} />
                   <Route path="/vehicle/:id" element={<VehicleDetailLive />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
