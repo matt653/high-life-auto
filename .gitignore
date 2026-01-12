@@ -6,6 +6,6 @@ dist
 .vscode
 .idea
 
-!env
 
-!.env
+
+
