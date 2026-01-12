@@ -70,7 +70,7 @@ const About = () => {
                         </ul>
 
                         <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                            <h3 style={{ color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '1rem', color: '#888', marginBottom: '1rem' }}>The High Life Mission</h3>
+                            <h3 style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '1rem', color: '#888', marginBottom: '1rem' }}>The High Life Mission</h3>
                             <p style={{ fontSize: '1.5rem', fontWeight: 300, lineHeight: 1.4, marginBottom: '1.5rem', fontStyle: 'italic' }}>
                                 "To put people in a better place with transportation - yeah it's that simple!"
                             </p>
