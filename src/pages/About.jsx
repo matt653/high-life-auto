@@ -56,29 +56,29 @@ const About = () => {
                         <h2 style={{ marginBottom: '1rem', color: 'var(--color-gold)' }}>The Garage Code</h2>
                         <ul style={{ listStyle: 'none', padding: 0 }}>
                             <li style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
-                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>01.</strong> <span>We strive to be the areas largest <span style={{ color: 'var(--color-gold)' }}>$3k and under</span> dealership in the tristates</span>
+                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>01.</strong> <span>We strive to be the area's largest <span style={{ color: 'var(--color-gold)' }}>$3k and under</span> dealership in the Tri-States.</span>
                             </li>
                             <li style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
-                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>02.</strong> <span>We show you the rust, the dents, the quirks. Honesty over hype. we do our best to be real</span>
+                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>02.</strong> <span>We show you the rust, the dents, the quirks. Honesty over hype. We do our best to be real.</span>
                             </li>
                             <li style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
-                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>03.</strong> <span>Matt buys cars with 1 question... would he own it for the price it selling for, if its a yes- you'll see it on the lot!</span>
+                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>03.</strong> <span>Matt buys cars with 1 question... would he own it for the price it's selling for? If it's a yes — you'll see it on the lot!</span>
                             </li>
                             <li style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
-                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>04.</strong> <span>Character over chrome. Function over flash. why over pay for looks that fade away</span>
+                                <strong style={{ color: 'var(--color-gold)', minWidth: '30px' }}>04.</strong> <span>Character over chrome. Function over flash. Why overpay for looks that fade away?</span>
                             </li>
                         </ul>
 
                         <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                             <h3 style={{ color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '1rem', color: '#888', marginBottom: '1rem' }}>The High Life Mission</h3>
                             <p style={{ fontSize: '1.5rem', fontWeight: 300, lineHeight: 1.4, marginBottom: '1.5rem', fontStyle: 'italic' }}>
-                                "To put people in a better place with transportation - yea its that simple!"
+                                "To put people in a better place with transportation - yeah it's that simple!"
                             </p>
                             <p style={{ color: 'var(--color-gold)', fontWeight: 700, letterSpacing: '0.05em' }}>
-                                no games-noBS-Just real people-Being real
+                                No games. No BS. Just real people being real.
                             </p>
                             <p style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.5rem' }}>
-                                (why that is a "selling point" blows our mind too!)
+                                (Why that is a "selling point" blows our mind too!)
                             </p>
                         </div>
                     </div>

@@ -38,7 +38,7 @@ const InventoryLive = () => {
             car.model?.toLowerCase().includes(filter.toLowerCase()) ||
             car.year?.toString().includes(filter)) &&
         (car.price || 0) <= priceRange
-    );
+    ).sort((a, b) => (a.price || 0) - (b.price || 0));
 
     return (
         <div className="inventory-page">

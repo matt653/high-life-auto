@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SEOProvider from './components/SEOProvider';
 import LeadCaptureModal from './components/LeadCaptureModal';
+import Chatbot from './components/Chatbot';
 import StickyLeadBar from './components/StickyLeadBar';
 
 // Code Splitting for Performance
@@ -27,6 +28,7 @@ function App() {
         <div className="app">
           <Navbar />
           <LeadCaptureModal />
+          <Chatbot />
           <StickyLeadBar />
           <main>
             <Suspense fallback={<PageLoader />}>

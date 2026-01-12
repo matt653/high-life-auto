@@ -9,7 +9,7 @@ Your live CSV feed at `C:\Frazer30\VehicleUploads\DealerWebsites-1.csv` is now f
 - Parses all standard Frazer fields (Stock, VIN, Year, Make, Model, Mileage, Price, PhotoURLs, etc.)
 - Automatically generates "Job To Be Done" stories based on body type
 - Extracts YouTube video links from the "Sales Comments" field
-- Updates daily after 6pm when Frazer exports the new CSV
+- Updates daily after 7pm when Frazer exports the new CSV
 
 ### 2. **YouTube Test Drive Integration** ✅
 
