@@ -122,28 +122,16 @@ const Chatbot = () => {
             return;
         }
 
-        // NOTE: Since the user provided an /edit URL, we can't POST to it directly as a Web App.
-        // This is a placeholder for the actual fetch call.
-        // Typically, we would use fetch(SHEET_URL, { method: 'POST', body: JSON.stringify(data) })
-        // But we need to avoid CORS issues, often by using 'no-cors' or a proxy.
-
-        // For now, we will simulate success and log it, as per the plan to "use the Web App URL".
-        // We will attempt a POST, but handle failure gracefully.
-
         try {
-            // If the URL is actually a Web App exec URL, this might work (users often pass raw data or FormData).
-            // Since we suspect the URL is wrong, we'll log it for inspection.
-            /*
             await fetch(SHEET_URL, {
-               method: 'POST',
-               mode: 'no-cors', // Often needed for Google Scripts
-               headers: {
-                   'Content-Type': 'application/json',
-               },
-               body: JSON.stringify(data)
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
             });
-            */
-            console.log("Lead captured (Simulated Post to Sheet):", data);
+            console.log("Lead sent to Google Sheet (Note: no-cors mode does not return a response, but it works if URL is correct).");
         } catch (error) {
             console.error("Failed to send lead to sheet:", error);
         }
