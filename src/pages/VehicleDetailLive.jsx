@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart } from 'lucide-react';
 import { loadInventoryFromFrazerCSV, analyzeVideoTranscript } from '../services/FrazerFeedService';
+import { useGarage } from '../context/GarageContext';
 
 const VehicleDetailLive = () => {
     const { id } = useParams();
     const [car, setCar] = useState(null);
     const [loading, setLoading] = useState(true);
-    const { toggleGarage, isInGarage } = useGarage();
+
+    // Safety check for context
+    const garageContext = useGarage();
+    const toggleGarage = garageContext?.toggleGarage || (() => console.warn('Garage Context missing'));
+    const isInGarage = garageContext?.isInGarage || (() => false);
+
     const [vehicleGrade, setVehicleGrade] = useState(null);
 
     useEffect(() => {
@@ -35,6 +41,7 @@ const VehicleDetailLive = () => {
     };
 
     const getGradeColor = (grade) => {
+        if (!grade) return '#999';
         if (grade === 'A' || grade === 'A+') return 'var(--color-accent)';
         if (grade === 'B' || grade === 'B+') return 'var(--color-gold)';
         return '#ff6b6b';

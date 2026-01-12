@@ -2,8 +2,6 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SEOProvider from './components/SEOProvider';
-import LeadCaptureModal from './components/LeadCaptureModal';
-import Chatbot from './components/Chatbot';
 import StickyLeadBar from './components/StickyLeadBar';
 
 import { GarageProvider } from './context/GarageContext';
@@ -12,7 +10,6 @@ import { GarageProvider } from './context/GarageContext';
 const Homepage = lazy(() => import('./pages/Homepage'));
 const InventoryLive = lazy(() => import('./pages/InventoryLive'));
 const VehicleDetailLive = lazy(() => import('./pages/VehicleDetailLive'));
-const Garage = lazy(() => import('./pages/Garage'));
 const About = lazy(() => import('./pages/About'));
 const Financing = lazy(() => import('./pages/Financing'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -31,8 +28,6 @@ function App() {
         <Router>
           <div className="app">
             <Navbar />
-            <LeadCaptureModal />
-            <Chatbot />
             <StickyLeadBar />
             <main>
               <Suspense fallback={<PageLoader />}>
@@ -40,7 +35,6 @@ function App() {
                   <Route path="/" element={<Homepage />} />
                   <Route path="/inventory" element={<InventoryLive />} />
                   <Route path="/vehicle/:id" element={<VehicleDetailLive />} />
-                  <Route path="/garage" element={<Garage />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                 </Routes>
