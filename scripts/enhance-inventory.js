@@ -20,8 +20,10 @@ const PUBLIC_DIR = path.join(process.cwd(), 'public');
 const OUTPUT_JSON_PATH = path.join(PUBLIC_DIR, 'inventory-enhanced.json');
 const CACHE_PATH = path.join(process.cwd(), 'scripts', 'ai-cache.json');
 
+import 'dotenv/config';
+
 // API KEY
-const GEMINI_API_KEY = "AIzaSyBjyT8TsGpcA8ureyU989vbHqWKywBPAPg";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });

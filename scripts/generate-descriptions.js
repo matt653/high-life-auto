@@ -13,8 +13,11 @@ import { fileURLToPath } from 'url';
 // CONFIGURATION
 const FRAZER_CSV_PATH = 'G:\\My Drive\\Matt\\new app stuf\\matt ai\\frazer data\\DealerCarSearch-1.csv';
 // Output explicit absolute path to project root
+import 'dotenv/config';
+
+// Output explicit absolute path to project root
 const OUTPUT_CSV_PATH = 'G:\\My Drive\\Matt\\new app stuf\\matt ai\\remote idea\\public\\frazer-inventory-updated.csv'; // Generating directly to public for viewing
-const GEMINI_API_KEY = "AIzaSyBjyT8TsGpcA8ureyU989vbHqWKywBPAPg"; // RETRYING KEY
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });

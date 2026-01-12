@@ -6,7 +6,7 @@ import './Chatbot.css';
 
 // Initialize Gemini API
 // Initialize Gemini API
-const API_KEY = "AIzaSyBjyT8TsGpcA8ureyU989vbHqWKywBPAPg"; // Hardcoded for reliability
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const SHEET_URL = import.meta.env.VITE_GOOGLE_SHEET_URL;
 
 const genAI = new GoogleGenerativeAI(API_KEY);
