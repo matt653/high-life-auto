@@ -57,9 +57,13 @@ const InventoryLive = () => {
     const [vehicles, setVehicles] = useState([]);
     const [editingVehicle, setEditingVehicle] = useState(null);
 
+    // --- Firebase & State ---
+    const [csvData, setCsvData] = useState([]);
+    const [enhancements, setEnhancements] = useState({});
+
     // Auth & View Mode
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [viewMode, setViewMode] = useState('public'); // Default to public
+    const [viewMode, setViewMode] = useState('public');
 
     const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
     const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -71,18 +75,15 @@ const InventoryLive = () => {
     const { toggleGarage, isInGarage } = useGarage();
 
     // --- Advanced Filtering State ---
-    const [sortKey, setSortKey] = useState('retail'); // 'retail' | 'mileage' | 'year'
-    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+    const [sortKey, setSortKey] = useState('retail');
+    const [sortOrder, setSortOrder] = useState('asc');
     const [maxMileage, setMaxMileage] = useState(250000);
 
     // Persistence Keys
-    const STORAGE_KEY = 'highlife_inventory_v1';
     const SETTINGS_KEY = 'highlife_settings_v1';
 
-    // 1. Initial Data Load
+    // Initial Settings Load
     useEffect(() => {
-        let loaded = false;
-
         const savedSettings = localStorage.getItem(SETTINGS_KEY);
         if (savedSettings) {
             const parsed = JSON.parse(savedSettings);
@@ -94,72 +95,31 @@ const InventoryLive = () => {
             }
             setLastSyncTime(parsed.lastSyncTime || null);
         }
-
-        const savedData = localStorage.getItem(STORAGE_KEY);
-        if (savedData) {
-            try {
-                const parsed = JSON.parse(savedData);
-                if (parsed && parsed.length > 0) {
-                    setVehicles(parsed);
-                    loaded = true;
-                }
-            } catch (e) {
-                console.error("Failed to parse local storage", e);
-            }
-        }
-
-        if (!loaded) {
-            // Fallback 1: Raw CSV Constant
-            const rawParsed = parseCSV(RAW_VEHICLE_CSV || "");
-            if (rawParsed.length > 0) {
-                setVehicles(rawParsed);
-            } else {
-                // Fallback 2: Hardcoded Emergency Data
-                // We load this so something shows, but we also rely on the smart sync effect to catch us.
-                console.warn("No inventory source found. Loading Emergency Fallback.");
-                setVehicles([
-                    {
-                        stockNumber: "FALLBACK-001",
-                        year: "2015",
-                        make: "Chevrolet",
-                        model: "Malibu",
-                        trim: "LT",
-                        retail: "5995",
-                        mileage: "120,000",
-                        imageUrls: [],
-                        aiGrade: { overallGrade: "B+" },
-                        comments: "Reliable daily driver. Clean title."
-                    },
-                    {
-                        stockNumber: "FALLBACK-002",
-                        year: "2012",
-                        make: "Ford",
-                        model: "F-150",
-                        trim: "XLT",
-                        retail: "10995",
-                        mileage: "145,000",
-                        imageUrls: [],
-                        aiGrade: { overallGrade: "A-" },
-                        comments: "Solid work truck. Runs great."
-                    }
-                ]);
-            }
-        }
     }, []);
 
-    // 2. Persist Data
+    // 1. Firestore Sync (Enhancements)
+    // This connects to the database to pull "Grades" and "Descriptions"
     useEffect(() => {
-        if (vehicles.length > 0 && vehicles[0].stockNumber !== 'FALLBACK-001') {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
+        if (!isFirebaseConfigured) {
+            console.warn("Firebase not configured - Enhancements will not save remotely.");
+            return;
         }
-    }, [vehicles]);
 
-    useEffect(() => {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ googleSheetUrl, lastSyncTime }));
-    }, [googleSheetUrl, lastSyncTime]);
+        const unsubscribe = onSnapshot(collection(db, 'vehicle_enhancements'), (snapshot) => {
+            const data = {};
+            snapshot.forEach(doc => {
+                data[doc.id] = doc.data();
+            });
+            setEnhancements(data);
+        }, (error) => {
+            console.error("Firestore sync error:", error);
+        });
 
-    // 3. Smart Sync Logic
-    // 3. Smart Sync Logic
+        return () => unsubscribe();
+    }, []);
+
+    // 2. CSV Sync (Base Inventory)
+    // Fetches the raw car connection from Frazer
     const performSmartSync = useCallback(async (manual = false) => {
         if (!googleSheetUrl) return;
 
@@ -178,68 +138,9 @@ const InventoryLive = () => {
                 throw new Error("Parsed CSV was empty");
             }
 
-            // --- CRITICAL PERSISTENCE FIX ---
-            // 1. Build map from Current State
-            const stateMap = new Map();
-            vehicles.forEach(v => {
-                if (v.vin) stateMap.set(v.vin.trim().toUpperCase(), v);
-            });
-
-            // 2. Build map from LocalStorage (Double-Check Safety Net)
-            // Even if React state is empty/fallback, we MUST check if valid data is sleeping in storage
-            // before we overwrite it with raw CSV data.
-            const storageMap = new Map();
-            try {
-                const savedRaw = localStorage.getItem(STORAGE_KEY);
-                if (savedRaw) {
-                    const savedObjs = JSON.parse(savedRaw);
-                    if (Array.isArray(savedObjs)) {
-                        savedObjs.forEach(v => {
-                            if (v.vin) storageMap.set(v.vin.trim().toUpperCase(), v);
-                        });
-                    }
-                }
-            } catch (e) {
-                console.warn("Could not read backup storage during sync", e);
-            }
-
-            const mergedVehicles = remoteInventory.map(remoteVehicle => {
-                // Normalize Remote VIN
-                const rVin = remoteVehicle.vin ? remoteVehicle.vin.trim().toUpperCase() : '';
-
-                // Check both sources for existing AI data
-                const localMatch = stateMap.get(rVin) || storageMap.get(rVin);
-
-                if (localMatch) {
-                    // STRICT PERSISTENCE:
-                    // We must ensure that any graded/edited data is NEVER overwritten by the raw CSV.
-                    return {
-                        // 1. Take the FRESH data from the CSV (Price, Mileage, etc.)
-                        ...remoteVehicle,
-
-                        // 2. OVERWRITE with preserved Local User Data if it exists
-                        // This ensures that even if we parsed a field from CSV, the Local edit wins 
-                        // for these specific "Creative/AI" fields.
-                        aiGrade: localMatch.aiGrade,
-                        marketingDescription: localMatch.marketingDescription,
-                        blemishes: localMatch.blemishes,
-                        groundingSources: localMatch.groundingSources,
-                        websiteNotes: localMatch.websiteNotes,
-
-                        // 3. Keep stable ID if needed
-                        id: localMatch.id || remoteVehicle.id,
-
-                        // 4. Update sync timestamp
-                        lastUpdated: Date.now()
-                    };
-                }
-                // New Vehicle: Take full CSV data
-                return remoteVehicle;
-            });
-
-            setVehicles(mergedVehicles);
+            setCsvData(remoteInventory);
             setLastSyncTime(new Date().toLocaleString());
-            if (manual) alert("Sync Complete! AI Data Preserved.");
+            if (manual) alert("Inventory Synced! (Enhancements applied automatically)");
 
         } catch (error) {
             console.error("Sync Error:", error);
@@ -247,17 +148,51 @@ const InventoryLive = () => {
         } finally {
             setIsSyncing(false);
         }
-    }, [googleSheetUrl, vehicles, STORAGE_KEY]);
+    }, [googleSheetUrl]);
 
-    // 4. Auto Sync Interval (AND INITIAL LOAD RESCUE)
+    // 3. The Merger (CSV + Firestore)
+    // Combines raw data with AI enhancements
+    useEffect(() => {
+        let baseList = csvData;
+
+        // Fallback Logic if CSV is empty (Initial Load Rescue)
+        if (baseList.length === 0) {
+            const rawParsed = parseCSV(RAW_VEHICLE_CSV || "");
+            if (rawParsed.length > 0) baseList = rawParsed;
+            else {
+                // Emergency Hardcoded
+                baseList = [
+                    { stockNumber: "FALLBACK-001", vin: "FB001", year: "2015", make: "Chevrolet", model: "Malibu", retail: "5995", mileage: "120,000", imageUrls: [], comments: "Reliable daily driver." },
+                    { stockNumber: "FALLBACK-002", vin: "FB002", year: "2012", make: "Ford", model: "F-150", retail: "10995", mileage: "145,000", imageUrls: [], comments: "Solid work truck." }
+                ];
+            }
+        }
+
+        const merged = baseList.map(car => {
+            const vin = car.vin ? car.vin.trim().toUpperCase() : 'NO_VIN';
+            const enhancement = enhancements[vin];
+            if (enhancement) {
+                // Overlay AI data
+                return {
+                    ...car,
+                    ...enhancement,
+                    // Ensure ID stability if needed
+                    id: enhancement.id || car.id
+                };
+            }
+            return car;
+        });
+
+        setVehicles(merged);
+    }, [csvData, enhancements]);
+
+
+    // 4. Auto Sync Interval
     useEffect(() => {
         if (!googleSheetUrl) return;
 
-        // IMMEDIATE RESCUE: If we have fallback data or very little data, run a sync immediately on mount.
-        if (vehicles.length <= 2 && (vehicles.length === 0 || vehicles[0].stockNumber === 'FALLBACK-001')) {
-            console.log("Triggering immediate rescue sync...");
-            performSmartSync(false);
-        }
+        // Initial Fetch
+        performSmartSync(false);
 
         const intervalId = setInterval(() => {
             const now = new Date();
@@ -267,7 +202,13 @@ const InventoryLive = () => {
             }
         }, 60 * 60 * 1000);
         return () => clearInterval(intervalId);
-    }, [googleSheetUrl, performSmartSync, vehicles.length]);
+    }, [googleSheetUrl, performSmartSync]);
+
+
+    // Save Settings locally
+    useEffect(() => {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ googleSheetUrl, lastSyncTime }));
+    }, [googleSheetUrl, lastSyncTime]);
 
 
     // --- Filtering Logic ---
@@ -303,10 +244,35 @@ const InventoryLive = () => {
         setSortOrder(order);
     };
 
+    // SAVING NOW WRITES TO FIREBASE (PUBLISH)
+    const handleSaveVehicle = async (updatedVehicle) => {
+        if (!updatedVehicle.vin) {
+            alert("Cannot save vehicle without VIN");
+            return;
+        }
 
-    const handleSaveVehicle = (updatedVehicle) => {
-        setVehicles(prev => prev.map(v => v.vin === updatedVehicle.vin ? updatedVehicle : v));
-        setEditingVehicle(null);
+        const vin = updatedVehicle.vin.trim().toUpperCase();
+
+        // Extract only the fields we want to enhance/persist
+        // We don't want to save the whole CSV row, just the AI stuff
+        const enhancementData = {
+            vin: vin,
+            aiGrade: updatedVehicle.aiGrade,
+            marketingDescription: updatedVehicle.marketingDescription,
+            blemishes: updatedVehicle.blemishes,
+            groundingSources: updatedVehicle.groundingSources,
+            websiteNotes: updatedVehicle.websiteNotes,
+            lastUpdated: Date.now()
+        };
+
+        try {
+            await setDoc(doc(db, 'vehicle_enhancements', vin), enhancementData, { merge: true });
+            setEditingVehicle(null); // Close modal, Firestore listener will update UI
+            // alert("Saved & Published!"); // Optional feedback
+        } catch (e) {
+            console.error("Error saving to Firestore", e);
+            alert("Failed to save changes: " + e.message);
+        }
     };
 
     const handleDealerLogin = () => {
