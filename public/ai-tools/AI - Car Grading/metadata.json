@@ -1,0 +1,5 @@
+{
+  "name": "Car Grader",
+  "description": "Professional vehicle evaluation and inventory grading tool powered by AI. Analyze price-to-value ratios, visual condition, and mechanical reports.",
+  "requestFramePermissions": []
+}

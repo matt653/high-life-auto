@@ -478,13 +478,7 @@ const InventoryLive = () => {
                         </div>
                     )}
 
-                    {viewMode === 'manager' && (
-                        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                            <button onClick={handleDealerLogin} className="btn-link" style={{ fontSize: '0.875rem', color: '#999' }}>
-                                Manager Override
-                            </button>
-                        </div>
-                    )}
+                    {/* Manager Override Button Removed */}
                 </div>
             </section>
 

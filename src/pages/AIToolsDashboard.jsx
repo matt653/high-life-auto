@@ -23,6 +23,36 @@ const AIToolsDashboard = () => {
             description: "Process Frazer CSV feeds.",
             color: "bg-green-500"
         },
+        {
+            name: "Chat Bot",
+            path: "/AI - Chat Bot/index.html",
+            description: "AI Customer Service Agent.",
+            color: "bg-purple-500"
+        },
+        {
+            name: "Marketplace Poster",
+            path: "/AI - Marketplace Posting Tool/index.html",
+            description: "Automated listing tool.",
+            color: "bg-orange-500"
+        },
+        {
+            name: "Customer Care",
+            path: "/AI - Post Sale Custmer Care/index.html",
+            description: "Post-sale follow up workflows.",
+            color: "bg-pink-500"
+        },
+        {
+            name: "Car Grading",
+            path: "/AI - Car Grading/index.html",
+            description: "Vehicle inspection and grading.",
+            color: "bg-red-500"
+        },
+        {
+            name: "CSV to Web",
+            path: "/AI - send csv to  web/index.html",
+            description: "Sync CSV data to website.",
+            color: "bg-indigo-500"
+        },
         // Add more tools here manually as you build them
     ];
 
