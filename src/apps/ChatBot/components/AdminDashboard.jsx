@@ -473,8 +473,8 @@ const SalesPipeline = ({ leads, userId, onSelectLead, demoMode, onAddLead, onUpd
                                                                 key={stage.id}
                                                                 onClick={() => handleStageClick(lead, stage.id)}
                                                                 className={`h-8 w-8 rounded-md border flex items-center justify-center transition-all shadow-sm ${isFilled
-                                                                        ? `${getHeatAttributes(stage.id).heatColor} border-transparent text-white scale-100`
-                                                                        : 'bg-white border-gray-200 text-gray-300 hover:border-gray-400 hover:text-gray-500 hover:scale-105'
+                                                                    ? `${getHeatAttributes(stage.id).heatColor} border-transparent text-white scale-100`
+                                                                    : 'bg-white border-gray-200 text-gray-300 hover:border-gray-400 hover:text-gray-500 hover:scale-105'
                                                                     }`}
                                                                 title={stage.title}
                                                             >
@@ -600,7 +600,7 @@ const SalesPipeline = ({ leads, userId, onSelectLead, demoMode, onAddLead, onUpd
                                         </td>
                                     </tr>
                                 )
-                            }})}
+                            })}
                             {leads.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">
@@ -667,8 +667,8 @@ const TranscriptViewer = ({ lead, onClose }) => {
                         messages.map((m, i) => (
                             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user'
-                                        ? 'bg-blue-600 text-white rounded-br-sm'
-                                        : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm shadow-sm'
+                                    ? 'bg-blue-600 text-white rounded-br-sm'
+                                    : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm shadow-sm'
                                     }`}>
                                     {m.role === 'model' && <div className="text-[9px] font-black uppercase text-gray-300 mb-1">Rex</div>}
                                     {m.text}
