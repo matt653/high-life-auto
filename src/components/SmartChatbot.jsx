@@ -73,7 +73,7 @@ const PIPELINE_STAGES = [
 const fetchGeminiResponse = async (userText, systemInstruction, history = []) => {
     try {
         // Fallback to hardcoded key if env var fails to load
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyBjyT8TsGpcA8ureyU989vbHqWKywBPAPg";
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) throw new Error("Missing HighLife API Key");
 
