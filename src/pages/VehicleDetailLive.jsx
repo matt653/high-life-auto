@@ -5,7 +5,7 @@ import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart } fr
 import { useGarage } from '../context/GarageContext';
 
 const VehicleDetailLive = () => {
-    const { id } = useParams();
+    const { id } = useParams(); // 'id' here corresponds to the Stock Number
     const [car, setCar] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -24,9 +24,36 @@ const VehicleDetailLive = () => {
     const loadVehicle = async () => {
         setLoading(true);
         try {
-            // Placeholder for new vehicle loading logic
-            setCar(null);
-            setVehicleGrade(null);
+            // 1. Try to get data from Local Storage (Synced by InventoryLive)
+            const STORAGE_KEY = 'highlife_inventory_v1';
+            const savedData = localStorage.getItem(STORAGE_KEY);
+
+            if (savedData) {
+                const vehicles = JSON.parse(savedData);
+                // Find vehicle by Stock Number (URL pattern /vehicle/:id matches this)
+                const foundCar = vehicles.find(v => v.stockNumber === id);
+
+                if (foundCar) {
+                    setCar({
+                        ...foundCar,
+                        // Harmonize property names
+                        id: foundCar.stockNumber,
+                        photos: foundCar.imageUrls || [],
+                        youtubeVideoUrl: foundCar.youtubeUrl,
+                        story: foundCar.marketingDescription || foundCar.comments || "No description available.",
+                        price: parseFloat(foundCar.retail) || 0,
+                    });
+
+                    if (foundCar.aiGrade) {
+                        setVehicleGrade(foundCar.aiGrade);
+                    }
+                } else {
+                    console.log("Vehicle not found in local cache");
+                    setCar(null);
+                }
+            } else {
+                console.log("No local inventory cache found");
+            }
         } catch (error) {
             console.error('Error loading vehicle:', error);
         } finally {
@@ -53,6 +80,7 @@ const VehicleDetailLive = () => {
         return (
             <div className="container" style={{ padding: '5rem 0', textAlign: 'center' }}>
                 <h2>Vehicle not found</h2>
+                <p>This car might have been sold or the inventory hasn't synced yet.</p>
                 <Link to="/inventory" className="btn btn-primary" style={{ marginTop: '2rem' }}>
                     Back to Showroom
                 </Link>
@@ -310,7 +338,7 @@ const VehicleDetailLive = () => {
                         <input type="text" placeholder="Your Name" style={{ padding: '1rem', border: '1px solid var(--color-border)' }} />
                         <input type="email" placeholder="Email Address" style={{ padding: '1rem', border: '1px solid var(--color-border)' }} />
                         <textarea placeholder="Tell us what you're looking for..." rows="4" style={{ padding: '1rem', border: '1px solid var(--color-border)' }}></textarea>
-                        <input type="hidden" value={`Interested in Stock #${car.stock}: ${car.year} ${car.make} ${car.model}`} />
+                        <input type="hidden" value={`Interested in Stock #${car.stockNumber}: ${car.year} ${car.make} ${car.model}`} />
                         <button className="btn btn-primary" type="button">Send Honest Message</button>
                     </form>
                 </div>
