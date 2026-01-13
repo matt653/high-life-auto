@@ -178,16 +178,37 @@ const InventoryLive = () => {
                 throw new Error("Parsed CSV was empty");
             }
 
-            // Merge logic: Robustly Preserve AI content
-            const localMap = new Map();
+            // --- CRITICAL PERSISTENCE FIX ---
+            // 1. Build map from Current State
+            const stateMap = new Map();
             vehicles.forEach(v => {
-                if (v.vin) localMap.set(v.vin.trim().toUpperCase(), v);
+                if (v.vin) stateMap.set(v.vin.trim().toUpperCase(), v);
             });
+
+            // 2. Build map from LocalStorage (Double-Check Safety Net)
+            // Even if React state is empty/fallback, we MUST check if valid data is sleeping in storage
+            // before we overwrite it with raw CSV data.
+            const storageMap = new Map();
+            try {
+                const savedRaw = localStorage.getItem(STORAGE_KEY);
+                if (savedRaw) {
+                    const savedObjs = JSON.parse(savedRaw);
+                    if (Array.isArray(savedObjs)) {
+                        savedObjs.forEach(v => {
+                            if (v.vin) storageMap.set(v.vin.trim().toUpperCase(), v);
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not read backup storage during sync", e);
+            }
 
             const mergedVehicles = remoteInventory.map(remoteVehicle => {
                 // Normalize Remote VIN
                 const rVin = remoteVehicle.vin ? remoteVehicle.vin.trim().toUpperCase() : '';
-                const localMatch = localMap.get(rVin);
+
+                // Check both sources for existing AI data
+                const localMatch = stateMap.get(rVin) || storageMap.get(rVin);
 
                 if (localMatch) {
                     // STRICT PERSISTENCE:
@@ -218,7 +239,7 @@ const InventoryLive = () => {
 
             setVehicles(mergedVehicles);
             setLastSyncTime(new Date().toLocaleString());
-            if (manual) alert("Sync Complete!");
+            if (manual) alert("Sync Complete! AI Data Preserved.");
 
         } catch (error) {
             console.error("Sync Error:", error);
@@ -226,7 +247,7 @@ const InventoryLive = () => {
         } finally {
             setIsSyncing(false);
         }
-    }, [googleSheetUrl, vehicles]);
+    }, [googleSheetUrl, vehicles, STORAGE_KEY]);
 
     // 4. Auto Sync Interval (AND INITIAL LOAD RESCUE)
     useEffect(() => {
