@@ -4,6 +4,51 @@ import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart } fr
 
 import { useGarage } from '../context/GarageContext';
 
+const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
+
+const parseCSV = (csv) => {
+    const lines = csv.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+
+    return lines.slice(1).filter(line => line.trim() !== '').map(line => {
+        const values = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === '"') inQuotes = !inQuotes;
+            else if (line[i] === ',' && !inQuotes) {
+                values.push(current.trim());
+                current = '';
+            } else {
+                current += line[i];
+            }
+        }
+        values.push(current.trim());
+
+        const get = (h) => (values[headers.indexOf(h)] || "").replace(/"/g, '').trim();
+
+        return {
+            vin: get("Vehicle Vin"),
+            stockNumber: get("Stock Number"),
+            make: get("Vehicle Make"),
+            model: get("Vehicle Model"),
+            trim: get("Vehicle Trim Level"),
+            year: get("Vehicle Year"),
+            mileage: get("Mileage"),
+            retail: get("Retail"),
+            cost: get("Cost"),
+            youtubeUrl: get("YouTube URL"),
+            imageUrls: get("Image URL").split('|'),
+            comments: get("Comments"),
+            options: get("Option List"),
+            type: get("Vehicle Type"),
+            // Try to recover potential AI fields even if fresh fetch
+            marketingDescription: get("marketingDescription"),
+            websiteNotes: get("websiteNotes")
+        };
+    });
+};
+
 const VehicleDetailLive = () => {
     const { id } = useParams(); // 'id' here corresponds to the Stock Number
     const [car, setCar] = useState(null);
@@ -24,36 +69,51 @@ const VehicleDetailLive = () => {
     const loadVehicle = async () => {
         setLoading(true);
         try {
-            // 1. Try to get data from Local Storage (Synced by InventoryLive)
+            // Strategy 1: Fast load from Local Storage
             const STORAGE_KEY = 'highlife_inventory_v1';
-            const savedData = localStorage.getItem(STORAGE_KEY);
+            let savedData = localStorage.getItem(STORAGE_KEY);
+            let vehicles = [];
 
             if (savedData) {
-                const vehicles = JSON.parse(savedData);
-                // Find vehicle by Stock Number (URL pattern /vehicle/:id matches this)
-                const foundCar = vehicles.find(v => v.stockNumber === id);
-
-                if (foundCar) {
-                    setCar({
-                        ...foundCar,
-                        // Harmonize property names
-                        id: foundCar.stockNumber,
-                        photos: foundCar.imageUrls || [],
-                        youtubeVideoUrl: foundCar.youtubeUrl,
-                        story: foundCar.marketingDescription || foundCar.comments || "No description available.",
-                        price: parseFloat(foundCar.retail) || 0,
-                    });
-
-                    if (foundCar.aiGrade) {
-                        setVehicleGrade(foundCar.aiGrade);
+                vehicles = JSON.parse(savedData);
+            } else {
+                console.log("Local cache miss. Fetching live data...");
+                // Strategy 2: Fetch live if local is empty (User landed directly on this page)
+                try {
+                    const response = await fetch(DEFAULT_CSV_URL);
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        vehicles = parseCSV(csvText);
+                        // Optional: Save to local storage for navigation back to inventory
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
                     }
-                } else {
-                    console.log("Vehicle not found in local cache");
-                    setCar(null);
+                } catch (netErr) {
+                    console.error("Network fetch failed", netErr);
+                }
+            }
+
+            // Find vehicle by Stock Number
+            const foundCar = vehicles.find(v => v.stockNumber === id);
+
+            if (foundCar) {
+                setCar({
+                    ...foundCar,
+                    // Harmonize property names
+                    id: foundCar.stockNumber,
+                    photos: foundCar.imageUrls || [],
+                    youtubeVideoUrl: foundCar.youtubeUrl,
+                    story: foundCar.marketingDescription || foundCar.comments || "No description available.",
+                    price: parseFloat(foundCar.retail) || 0,
+                });
+
+                if (foundCar.aiGrade) {
+                    setVehicleGrade(foundCar.aiGrade);
                 }
             } else {
-                console.log("No local inventory cache found");
+                console.log("Vehicle not found in data");
+                setCar(null);
             }
+
         } catch (error) {
             console.error('Error loading vehicle:', error);
         } finally {
@@ -67,6 +127,32 @@ const VehicleDetailLive = () => {
         if (grade === 'B' || grade === 'B+') return 'var(--color-gold)';
         return '#ff6b6b';
     };
+
+    const getEmbedUrl = (url) => {
+        if (!url) return null;
+        let videoId = null;
+        try {
+            if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1].split('?')[0];
+            } else if (url.includes('v=')) {
+                videoId = url.split('v=')[1].split('&')[0];
+            } else if (url.includes('embed/')) {
+                return url; // Already an embed link
+            } else if (url.includes('youtube.com/watch')) // Handle standard watch URL
+            {
+                const urlObj = new URL(url);
+                videoId = urlObj.searchParams.get("v");
+            }
+
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}?rel=0`;
+            }
+        } catch (e) {
+            console.error("Error parsing YouTube URL", e);
+        }
+        return url; // Fallback
+    };
+
 
     if (loading) {
         return (
@@ -122,7 +208,7 @@ const VehicleDetailLive = () => {
                             )}
 
                             {/* Video Section or Blemish Highlight */}
-                            {car.youtubeVideoUrl ? (
+                            {car.youtubeVideoUrl && car.youtubeVideoUrl.length > 5 ? (
                                 <div style={{ marginBottom: '2rem' }}>
                                     <div style={{ backgroundColor: '#000', padding: '1rem 1rem 0.5rem', color: 'white' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -133,7 +219,7 @@ const VehicleDetailLive = () => {
                                     </div>
                                     <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, backgroundColor: '#000' }}>
                                         <iframe
-                                            src={car.youtubeVideoUrl}
+                                            src={getEmbedUrl(car.youtubeVideoUrl)}
                                             title="Test Drive Video"
                                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                                             frameBorder="0"
