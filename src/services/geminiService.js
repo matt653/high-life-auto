@@ -42,9 +42,10 @@ export const analyzeVehicle = async (vehicle) => {
        - **Reference the video directly**: "In the test drive, Miriam noted..." or "As heard in the video..."
        - Tone: Professional, honest, upbeat.
        - Formatting: HTML tags <p>, <ul>, <li>, <strong>.
+    5. **Honest Blemishes**: List specific cosmetic or mechanical flaws mentioned in the video or notes (e.g., "Scratch on rear bumper", "Tear in driver seat"). Be specific. If none, return an empty list.
 
     OUTPUT JSON SCHEMA:
-    Return a JSON object containing the 'grade' object and a 'marketingDescription' string.
+    Return a JSON object containing the 'grade' object, a 'marketingDescription' string, and a 'blemishes' array.
   `;
 
     try {
@@ -58,6 +59,10 @@ export const analyzeVehicle = async (vehicle) => {
                     type: "OBJECT",
                     properties: {
                         marketingDescription: { type: "STRING" },
+                        blemishes: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        },
                         grade: {
                             type: "OBJECT",
                             properties: {
@@ -119,7 +124,7 @@ export const analyzeVehicle = async (vehicle) => {
                             required: ["overallScore", "overallGrade", "summary", "categories"]
                         }
                     },
-                    required: ["marketingDescription", "grade"]
+                    required: ["marketingDescription", "grade", "blemishes"]
                 }
             }
         });

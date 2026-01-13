@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart, AlertCircle, ClipboardCheck } from 'lucide-react';
 
 import { useGarage } from '../context/GarageContext';
 
@@ -42,6 +42,11 @@ const parseCSV = (csv) => {
             comments: get("Comments"),
             options: get("Option List"),
             type: get("Vehicle Type"),
+            // Added Spec Fields
+            engine: get("Vehicle Engine"),
+            transmission: get("Vehicle Transmission"),
+            exteriorColor: get("Vehicle Exterior Color"),
+            interiorColor: get("Vehicle Interior Color"),
             // Try to recover potential AI fields even if fresh fetch
             marketingDescription: get("marketingDescription"),
             websiteNotes: get("websiteNotes")
@@ -245,6 +250,7 @@ const VehicleDetailLive = () => {
                                     )}
                                 </div>
                             )}
+
                         </div>
 
                         {/* Right: Info & Story */}
@@ -325,48 +331,11 @@ const VehicleDetailLive = () => {
                                     <Info size={24} />
                                     What You Need To Know
                                 </h2>
-                                <p style={{ fontSize: '1.125rem', lineHeight: '1.6', margin: 0 }}>
-                                    {car.story}
-                                </p>
+                                <div
+                                    style={{ fontSize: '1.125rem', lineHeight: '1.6', margin: 0 }}
+                                    dangerouslySetInnerHTML={{ __html: car.story }}
+                                />
                             </div>
-
-                            {/* Vehicle Grade Card */}
-                            {vehicleGrade && (
-                                <div style={{
-                                    backgroundColor: 'var(--color-secondary)',
-                                    padding: '2rem',
-                                    marginBottom: '2rem',
-                                    border: `3px solid ${getGradeColor(vehicleGrade?.overallGrade)}`
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                        <Award size={40} color={getGradeColor(vehicleGrade?.overallGrade)} />
-                                        <div>
-                                            <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Vehicle Grade: {vehicleGrade?.overallGrade || 'N/A'}</h2>
-                                            <p style={{ fontSize: '0.875rem', opacity: 0.7, margin: 0 }}>Based on Miriam's test drive analysis</p>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #ddd' }}>
-                                            <span style={{ fontWeight: 600 }}>Mechanical Condition:</span>
-                                            <span style={{ color: getGradeColor(vehicleGrade?.mechanical?.grade), fontWeight: 800 }}>{vehicleGrade?.mechanical?.grade || 'N/A'}</span>
-                                        </div>
-                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade?.mechanical?.notes || 'No notes available.'}</p>
-
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #ddd' }}>
-                                            <span style={{ fontWeight: 600 }}>Cosmetic Condition:</span>
-                                            <span style={{ color: getGradeColor(vehicleGrade?.cosmetic?.grade), fontWeight: 800 }}>{vehicleGrade?.cosmetic?.grade || 'N/A'}</span>
-                                        </div>
-                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade?.cosmetic?.notes || 'No notes available.'}</p>
-
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #ddd' }}>
-                                            <span style={{ fontWeight: 600 }}>Value Rating:</span>
-                                            <span style={{ color: getGradeColor(vehicleGrade?.value?.grade), fontWeight: 800 }}>{vehicleGrade?.value?.grade || 'N/A'}</span>
-                                        </div>
-                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade?.value?.notes || 'No notes available.'}</p>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Consumer Education */}
                             {(vehicleGrade?.buyerTips || vehicleGrade?.consumerEducation) && (
@@ -417,6 +386,26 @@ const VehicleDetailLive = () => {
                                 </div>
                             </div>
 
+                            {/* Features & Options */}
+                            {car.options && (
+                                <div style={{ marginBottom: '2rem' }}>
+                                    <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem', borderBottom: '1px solid #ddd', paddingBottom: '0.5rem' }}>
+                                        Factory Options & Features
+                                    </h3>
+                                    <div style={{ fontSize: '0.9rem', color: '#555', lineHeight: '1.6' }}>
+                                        {car.options.includes('|') || car.options.includes(',') ? (
+                                            <ul style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', paddingLeft: '1.5rem', margin: 0 }}>
+                                                {car.options.split(/[,|]/).map((opt, i) => (
+                                                    opt.trim() && <li key={i}>{opt.trim()}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p>{car.options}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <a href="https://youtube.com/playlist?list=PLl7IO3qjXvk6YT6yYeClM1Pn24H0uWGj4&si=fjk0H7RWbmkXIVJL" target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', padding: '1.25rem', textAlign: 'center' }}>
                                 Watch More on YouTube
                             </a>
@@ -424,6 +413,89 @@ const VehicleDetailLive = () => {
                     </div>
                 </div>
             </section>
+
+            {/* FULL WIDTH REPORT CARD SECTION */}
+            {vehicleGrade && (
+                <section style={{ backgroundColor: '#fff', padding: '3rem 0', borderTop: '4px solid var(--color-primary)' }}>
+                    <div className="container">
+                        <div style={{
+                            border: '4px double #1f2937', // Double border for report card look
+                            padding: '2rem',
+                            backgroundColor: '#fffdf5', // Slight paper tint
+                            position: 'relative'
+                        }}>
+                            {/* Report Card Header */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #1f2937', paddingBottom: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <ClipboardCheck size={48} color="#1f2937" />
+                                    <div>
+                                        <h2 style={{ fontSize: '2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px', color: '#1f2937' }}>Official Report Card</h2>
+                                        <p style={{ margin: 0, fontFamily: 'monospace', color: '#666' }}>ID: {car.stockNumber} | DATE: {new Date().toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Final Grade</div>
+                                        <div style={{ fontSize: '3rem', fontWeight: '900', color: getGradeColor(vehicleGrade.overallGrade), lineHeight: 1 }}>
+                                            {vehicleGrade.overallGrade}
+                                        </div>
+                                    </div>
+                                    {/* Stamp Look */}
+                                    <div style={{
+                                        border: `3px solid ${getGradeColor(vehicleGrade.overallGrade)}`,
+                                        color: getGradeColor(vehicleGrade.overallGrade),
+                                        padding: '0.5rem 1rem',
+                                        transform: 'rotate(-5deg)',
+                                        fontWeight: '900',
+                                        fontSize: '1.25rem',
+                                        textTransform: 'uppercase',
+                                        opacity: 0.8
+                                    }}>
+                                        Verified
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Report Card Body - Grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0', border: '1px solid #1f2937' }}>
+                                {vehicleGrade.categories && Object.entries(vehicleGrade.categories).map(([key, cat], index) => (
+                                    <div key={key} style={{
+                                        padding: '1.5rem',
+                                        borderRight: '1px solid #1f2937',
+                                        borderBottom: '1px solid #1f2937',
+                                        backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb'
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                            <h3 style={{ margin: 0, textTransform: 'uppercase', fontSize: '1rem', fontWeight: 800 }}>{cat.name || key}</h3>
+                                            <span style={{ fontWeight: 900, color: getGradeColor(cat.grade), fontSize: '1.5rem' }}>{cat.grade}</span>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6', fontFamily: 'serif', color: '#333' }}>
+                                            {cat.reasoning}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Instructor Comments */}
+                            <div style={{ marginTop: '2rem', fontFamily: 'serif', fontStyle: 'italic', color: '#444' }}>
+                                <strong style={{ fontFamily: 'sans-serif', textTransform: 'uppercase', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem', color: '#000' }}>Instructor Comments:</strong>
+                                "{vehicleGrade.summary}"
+                            </div>
+
+                            {/* Signature Line */}
+                            <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontFamily: 'Noteworthy, "Segoe Print", sans-serif', fontSize: '1.5rem', color: '#2563eb' }}>Miriam</div>
+                                    <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0.5rem auto 0' }}></div>
+                                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>Certified Evaluator</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Honest Blemishes */}
             <section style={{ backgroundColor: '#1a1a1a', color: 'white' }}>

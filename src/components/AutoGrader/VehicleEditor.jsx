@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { analyzeVehicle } from '../../services/geminiService';
 import './AutoGrader.css';
@@ -22,6 +21,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                 ...prev,
                 marketingDescription: result.marketingDescription,
                 aiGrade: result.grade,
+                blemishes: result.blemishes, // Capture blemishes
                 groundingSources: result.groundingSources,
                 lastUpdated: Date.now()
             }));
@@ -30,6 +30,23 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    const handleGradeChange = (field, value, category = null) => {
+        setFormData(prev => {
+            // Deep copy to avoid mutation
+            const newGrade = JSON.parse(JSON.stringify(prev.aiGrade));
+
+            if (category) {
+                if (newGrade.categories[category]) {
+                    newGrade.categories[category][field] = value;
+                }
+            } else {
+                newGrade[field] = value;
+            }
+
+            return { ...prev, aiGrade: newGrade, lastUpdated: Date.now() };
+        });
     };
 
     return (
@@ -174,7 +191,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                     onClick={() => setActiveTab('details')}
                                     className={`ag-tab-btn ${activeTab === 'details' ? 'active' : ''}`}
                                 >
-                                    Preview Report Card
+                                    Edit Report Card
                                 </button>
                             </div>
                             <button
@@ -231,6 +248,22 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                         )}
                                     </div>
 
+                                    {/* Blemishes Section - Editable */}
+                                    <div className="ag-card">
+                                        <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#b91c1c' }}>Identified Blemishes (One per line)</h4>
+                                        <textarea
+                                            value={formData.blemishes ? formData.blemishes.join('\n') : ''}
+                                            onChange={(e) => setFormData(prev => ({
+                                                ...prev,
+                                                blemishes: e.target.value.split('\n')
+                                            }))}
+                                            className="ag-textarea"
+                                            rows={5}
+                                            placeholder="Enter blemishes here, one per line..."
+                                            style={{ color: '#4b5563', fontSize: '0.875rem' }}
+                                        />
+                                    </div>
+
                                     {/* Quick Stats Summary */}
                                     {formData.aiGrade && (
                                         <div className="ag-grade-grid">
@@ -243,7 +276,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                 <div style={{ fontSize: '1.875rem', fontWeight: '900', color: '#1f2937' }}>{formData.aiGrade.overallScore}</div>
                                             </div>
                                             <div className="ag-grade-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <button onClick={() => setActiveTab('details')} style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}>View Full Report &rarr;</button>
+                                                <button onClick={() => setActiveTab('details')} style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}>Edit Report Card &rarr;</button>
                                             </div>
                                         </div>
                                     )}
@@ -271,26 +304,97 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                 <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
                                     {formData.aiGrade ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                                            {/* Editable Header Section */}
                                             <div style={{ background: 'linear-gradient(to bottom right, #1e3a8a, #312e81)', borderRadius: '1rem', padding: '1.5rem', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-                                                <h3 style={{ color: '#bfdbfe', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Overall Assessment</h3>
-                                                <div style={{ fontSize: '3rem', fontWeight: '900', lineHeight: 1, marginBottom: '0.5rem' }}>{formData.aiGrade.overallGrade} <span style={{ fontSize: '1.5rem', fontWeight: '500', color: '#93c5fd', opacity: 0.75 }}>/ 100</span></div>
-                                                <p style={{ color: '#dbeafe', fontStyle: 'italic' }}>"{formData.aiGrade.summary}"</p>
-                                            </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                {Object.values(formData.aiGrade.categories).map((cat, idx) => (
-                                                    <div key={idx} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <div>
-                                                            <h5 style={{ fontWeight: 'bold', color: '#111827', margin: 0 }}>{cat.name}</h5>
-                                                            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginTop: '0.25rem' }}>{cat.reasoning}</p>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                    <div>
+                                                        <h3 style={{ color: '#bfdbfe', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Overall Assessment</h3>
+                                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.aiGrade.overallGrade}
+                                                                onChange={(e) => handleGradeChange('overallGrade', e.target.value)}
+                                                                style={{
+                                                                    backgroundColor: 'transparent',
+                                                                    border: 'none',
+                                                                    borderBottom: '2px solid rgba(255,255,255,0.3)',
+                                                                    color: 'white',
+                                                                    fontSize: '2.5rem',
+                                                                    fontWeight: '900',
+                                                                    width: '80px'
+                                                                }}
+                                                            />
+                                                            <span style={{ fontSize: '1.5rem', fontWeight: '500', color: '#93c5fd', opacity: 0.75 }}>/ 100</span>
                                                         </div>
-                                                        <div style={{ backgroundColor: '#f3f4f6', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', fontSize: '1.125rem', fontWeight: 'bold' }}>{cat.grade}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <label style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#93c5fd', marginBottom: '0.25rem' }}>Instructor Comments (Summary)</label>
+                                                    <textarea
+                                                        value={formData.aiGrade.summary}
+                                                        onChange={(e) => handleGradeChange('summary', e.target.value)}
+                                                        rows={3}
+                                                        style={{
+                                                            width: '100%',
+                                                            backgroundColor: 'rgba(255,255,255,0.1)',
+                                                            border: '1px solid rgba(255,255,255,0.2)',
+                                                            borderRadius: '0.5rem',
+                                                            color: 'white',
+                                                            padding: '0.75rem',
+                                                            fontFamily: 'inherit'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Editable Categories */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                {formData.aiGrade.categories && Object.entries(formData.aiGrade.categories).map(([key, cat]) => (
+                                                    <div key={key} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                                                        <div style={{ flex: 1 }}>
+                                                            <h5 style={{ fontWeight: 'bold', color: '#111827', margin: 0, textTransform: 'capitalize' }}>{cat.name || key}</h5>
+                                                            <textarea
+                                                                value={cat.reasoning}
+                                                                onChange={(e) => handleGradeChange('reasoning', e.target.value, key)}
+                                                                rows={2}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    marginTop: '0.5rem',
+                                                                    padding: '0.5rem',
+                                                                    fontSize: '0.875rem',
+                                                                    color: '#4b5563',
+                                                                    border: '1px solid #d1d5db',
+                                                                    borderRadius: '0.25rem'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                                            <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#6b7280' }}>Grade</label>
+                                                            <input
+                                                                type="text"
+                                                                value={cat.grade}
+                                                                onChange={(e) => handleGradeChange('grade', e.target.value, key)}
+                                                                style={{
+                                                                    width: '3rem',
+                                                                    textAlign: 'center',
+                                                                    backgroundColor: '#f3f4f6',
+                                                                    padding: '0.25rem',
+                                                                    borderRadius: '0.25rem',
+                                                                    fontSize: '1.125rem',
+                                                                    fontWeight: 'bold',
+                                                                    border: '1px solid #d1d5db'
+                                                                }}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                     ) : (
                                         <div style={{ height: '16rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
-                                            <p>No grading data available yet.</p>
+                                            <p>No grading data available yet. Run the AI first.</p>
                                         </div>
                                     )}
                                 </div>
