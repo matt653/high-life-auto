@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Settings, Lock } from 'lucide-react';
 
 const AI_TOOLS_BASE_PATH = '/ai-tools';
@@ -25,9 +26,10 @@ const AIToolsDashboard = () => {
         },
         {
             name: "Chat Bot",
-            path: "/AI - Chat Bot/index.html",
+            path: "/apps/chatbot",
             description: "AI Customer Service Agent.",
-            color: "bg-purple-500"
+            color: "bg-purple-500",
+            isInternal: true
         },
         {
             name: "Marketplace Poster",
@@ -103,14 +105,23 @@ const AIToolsDashboard = () => {
                             <div className="p-6">
                                 <h3 className="text-xl font-bold text-gray-900 mb-2">{tool.name}</h3>
                                 <p className="text-gray-500 text-sm mb-6">{tool.description}</p>
-                                <a
-                                    href={`${AI_TOOLS_BASE_PATH}${tool.path}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center justify-center w-full bg-gray-900 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-800 transition-colors"
-                                >
-                                    Launch Tool
-                                </a>
+                                {tool.isInternal ? (
+                                    <Link
+                                        to={tool.path}
+                                        className="inline-flex items-center justify-center w-full bg-gray-900 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-800 transition-colors"
+                                    >
+                                        Launch Tool
+                                    </Link>
+                                ) : (
+                                    <a
+                                        href={`${AI_TOOLS_BASE_PATH}${tool.path}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center justify-center w-full bg-gray-900 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-800 transition-colors"
+                                    >
+                                        Launch Tool
+                                    </a>
+                                )}
                             </div>
                         </div>
                     ))}

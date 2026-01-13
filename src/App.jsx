@@ -16,6 +16,7 @@ const About = lazy(() => import('./pages/About'));
 const Financing = lazy(() => import('./pages/Financing'));
 const Contact = lazy(() => import('./pages/Contact'));
 const AIToolsDashboard = lazy(() => import('./pages/AIToolsDashboard'));
+const ChatBotApp = lazy(() => import('./pages/ChatBotApp'));
 
 // Loading Fallback
 const PageLoader = () => (
@@ -43,6 +44,7 @@ function App() {
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/lab" element={<AIToolsDashboard />} />
+                  <Route path="/apps/chatbot" element={<ChatBotApp />} />
                 </Routes>
               </Suspense>
             </main>
@@ -127,6 +129,7 @@ function App() {
                   <div>
                     <a href="#" style={{ marginRight: '1rem' }}>Privacy Policy</a>
                     <a href="#">Terms of Service</a>
+                    <a href="/lab" style={{ marginLeft: '1rem', opacity: 0.5 }}>Staff Login</a>
                   </div>
                 </div>
               </div>
