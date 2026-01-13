@@ -307,12 +307,12 @@ const VehicleDetailLive = () => {
                                     backgroundColor: 'var(--color-secondary)',
                                     padding: '2rem',
                                     marginBottom: '2rem',
-                                    border: `3px solid ${getGradeColor(vehicleGrade.overallGrade)}`
+                                    border: `3px solid ${getGradeColor(vehicleGrade?.overallGrade)}`
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                        <Award size={40} color={getGradeColor(vehicleGrade.overallGrade)} />
+                                        <Award size={40} color={getGradeColor(vehicleGrade?.overallGrade)} />
                                         <div>
-                                            <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Vehicle Grade: {vehicleGrade.overallGrade}</h2>
+                                            <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Vehicle Grade: {vehicleGrade?.overallGrade || 'N/A'}</h2>
                                             <p style={{ fontSize: '0.875rem', opacity: 0.7, margin: 0 }}>Based on Miriam's test drive analysis</p>
                                         </div>
                                     </div>
@@ -320,21 +320,21 @@ const VehicleDetailLive = () => {
                                     <div style={{ display: 'grid', gap: '1rem' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #ddd' }}>
                                             <span style={{ fontWeight: 600 }}>Mechanical Condition:</span>
-                                            <span style={{ color: getGradeColor(vehicleGrade.mechanical.grade), fontWeight: 800 }}>{vehicleGrade.mechanical.grade}</span>
+                                            <span style={{ color: getGradeColor(vehicleGrade?.mechanical?.grade), fontWeight: 800 }}>{vehicleGrade?.mechanical?.grade || 'N/A'}</span>
                                         </div>
-                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade.mechanical.notes}</p>
+                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade?.mechanical?.notes || 'No notes available.'}</p>
 
                                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #ddd' }}>
                                             <span style={{ fontWeight: 600 }}>Cosmetic Condition:</span>
-                                            <span style={{ color: getGradeColor(vehicleGrade.cosmetic.grade), fontWeight: 800 }}>{vehicleGrade.cosmetic.grade}</span>
+                                            <span style={{ color: getGradeColor(vehicleGrade?.cosmetic?.grade), fontWeight: 800 }}>{vehicleGrade?.cosmetic?.grade || 'N/A'}</span>
                                         </div>
-                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade.cosmetic.notes}</p>
+                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade?.cosmetic?.notes || 'No notes available.'}</p>
 
                                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #ddd' }}>
                                             <span style={{ fontWeight: 600 }}>Value Rating:</span>
-                                            <span style={{ color: getGradeColor(vehicleGrade.value.grade), fontWeight: 800 }}>{vehicleGrade.value.grade}</span>
+                                            <span style={{ color: getGradeColor(vehicleGrade?.value?.grade), fontWeight: 800 }}>{vehicleGrade?.value?.grade || 'N/A'}</span>
                                         </div>
-                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade.value.notes}</p>
+                                        <p style={{ fontSize: '0.9rem', marginTop: '-0.5rem' }}>{vehicleGrade?.value?.notes || 'No notes available.'}</p>
                                     </div>
                                 </div>
                             )}
@@ -355,7 +355,7 @@ const VehicleDetailLive = () => {
                                         (These are common things for this model year/engine, not necessarily present on this specific car. We checked them!)
                                     </p>
                                     <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#856404' }}>
-                                        {(vehicleGrade.buyerTips || vehicleGrade.consumerEducation).map((tip, i) => (
+                                        {(vehicleGrade?.buyerTips || vehicleGrade?.consumerEducation || []).map((tip, i) => (
                                             <li key={i} style={{ marginBottom: '0.5rem' }}>{tip}</li>
                                         ))}
                                     </ul>
