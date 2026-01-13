@@ -1,0 +1,5 @@
+{
+  "name": "Marketplace AI Lister",
+  "description": "Import inventory via CSV, auto-generate high-converting listings using Gemini AI, and organize for rapid manual posting.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Post Sale Customer Care",
+  "description": "A smart customer relationship management system for automotive dealerships. It tracks post-sale data, automates follow-ups (birthdays, service check-ins) using Generative AI, and provides strategic inventory analytics to target the right customers.",
+  "requestFramePermissions": []
+}

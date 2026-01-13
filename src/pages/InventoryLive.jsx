@@ -70,6 +70,11 @@ const InventoryLive = () => {
     const [priceRange, setPriceRange] = useState(50000);
     const { toggleGarage, isInGarage } = useGarage();
 
+    // --- Advanced Filtering State ---
+    const [sortKey, setSortKey] = useState('retail'); // 'retail' | 'mileage' | 'year'
+    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+    const [maxMileage, setMaxMileage] = useState(250000);
+
     // Persistence Keys
     const STORAGE_KEY = 'highlife_inventory_v1';
     const SETTINGS_KEY = 'highlife_settings_v1';
@@ -184,12 +189,31 @@ const InventoryLive = () => {
                 car.model?.toLowerCase().includes(filter.toLowerCase()) ||
                 car.year?.toString().includes(filter) ||
                 car.stockNumber?.toLowerCase().includes(filter.toLowerCase())) &&
-            (parseFloat(car.retail || '0') <= priceRange)
+            (parseFloat(car.retail || '0') <= priceRange) &&
+            (parseInt(car.mileage?.replace(/\D/g, '') || 0) <= maxMileage)
         ).sort((a, b) => {
-            // Basic sort by price
-            return (parseFloat(a.retail) || 0) - (parseFloat(b.retail) || 0);
+            let valA, valB;
+
+            if (sortKey === 'retail') {
+                valA = parseFloat(a.retail) || 0;
+                valB = parseFloat(b.retail) || 0;
+            } else if (sortKey === 'mileage') {
+                valA = parseInt(a.mileage?.replace(/\D/g, '') || 0);
+                valB = parseInt(b.mileage?.replace(/\D/g, '') || 0);
+            } else if (sortKey === 'year') {
+                valA = parseInt(a.year) || 0;
+                valB = parseInt(b.year) || 0;
+            }
+
+            return sortOrder === 'asc' ? valA - valB : valB - valA;
         });
-    }, [vehicles, filter, priceRange]);
+    }, [vehicles, filter, priceRange, maxMileage, sortKey, sortOrder]);
+
+    const handleSortChange = (e) => {
+        const [key, order] = e.target.value.split('-');
+        setSortKey(key);
+        setSortOrder(order);
+    };
 
 
     const handleSaveVehicle = (updatedVehicle) => {
@@ -246,45 +270,94 @@ const InventoryLive = () => {
                         )}
                     </div>
 
-                    {/* Filter Controls (Available in both modes, but styled slightly differently if needed) */}
+                    {/* ACTIVE FILTERS BAR */}
                     <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '1rem',
                         backgroundColor: 'white',
                         padding: '1.5rem',
                         border: '1px solid var(--color-border)',
-                        marginBottom: '2rem'
+                        borderRadius: '0.5rem',
+                        marginBottom: '2rem',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
                     }}>
-                        <div style={{ flex: '1 1 300px', position: 'relative' }}>
-                            <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
-                            <input
-                                type="text"
-                                placeholder="Search Make, Model, or Year..."
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem 1rem 0.75rem 2.5rem',
-                                    border: '1px solid var(--color-border)',
-                                    outline: 'none'
-                                }}
-                            />
+                        {/* 1. Global Search */}
+                        <div style={{ position: 'relative' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'block' }}>Search</label>
+                            <div style={{ position: 'relative' }}>
+                                <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Make, Model, VIN..."
+                                    value={filter}
+                                    onChange={(e) => setFilter(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '0.375rem',
+                                        outline: 'none',
+                                        fontSize: '0.9rem'
+                                    }}
+                                />
+                            </div>
                         </div>
 
-                        <div style={{ flex: '1 1 200px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' }}>
-                                Max Price: ${priceRange.toLocaleString()}
+                        {/* 2. Max Price */}
+                        <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Max Price</span>
+                                <span style={{ color: 'var(--color-primary)' }}>${priceRange.toLocaleString()}</span>
                             </label>
                             <input
                                 type="range"
                                 min="1000"
-                                max="100000"
+                                max="50000"
                                 step="500"
                                 value={priceRange}
                                 onChange={(e) => setPriceRange(parseInt(e.target.value))}
-                                style={{ width: '100%', accentColor: 'var(--color-primary)' }}
+                                style={{ width: '100%', accentColor: 'var(--color-primary)', height: '2rem' }}
                             />
+                        </div>
+
+                        {/* 3. Max Mileage */}
+                        <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Max Mileage</span>
+                                <span style={{ color: 'var(--color-primary)' }}>{maxMileage.toLocaleString()} mi</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="50000"
+                                max="300000"
+                                step="10000"
+                                value={maxMileage}
+                                onChange={(e) => setMaxMileage(parseInt(e.target.value))}
+                                style={{ width: '100%', accentColor: 'var(--color-primary)', height: '2rem' }}
+                            />
+                        </div>
+
+                        {/* 4. Sort By */}
+                        <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'block' }}>Sort Inventory</label>
+                            <select
+                                onChange={handleSortChange}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '0.375rem',
+                                    backgroundColor: 'white',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                <option value="retail-asc">Price: Low to High</option>
+                                <option value="retail-desc">Price: High to Low</option>
+                                <option value="mileage-asc">Mileage: Low to High</option>
+                                <option value="year-desc">Year: Newest First</option>
+                                <option value="year-asc">Year: Oldest First</option>
+                            </select>
                         </div>
                     </div>
 
@@ -298,175 +371,124 @@ const InventoryLive = () => {
                     ) : (
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                            gap: '2.5rem'
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                            gap: '2rem',
+                            padding: '1rem 0'
                         }}>
-                            {filteredCars.length > 0 ? filteredCars.map((car) => (
-                                <div key={car.vin} style={{
-                                    border: '2px solid var(--color-border)',
-                                    backgroundColor: 'white',
-                                    overflow: 'hidden',
-                                    transition: 'box-shadow 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                                    onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
-                                >
-                                    {/* Top: Year Make Model */}
+                            {filteredCars.map((car) => (
+                                <Link to={`/vehicle/${car.stockNumber}`} key={car.stockNumber} style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <div style={{
-                                        padding: '1rem 1.25rem',
-                                        borderBottom: '1px solid var(--color-border)',
-                                        backgroundColor: 'var(--color-secondary)'
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'white',
+                                        overflow: 'hidden',
+                                        transition: 'transform 0.2s, box-shadow 0.2s',
+                                        cursor: 'pointer',
+                                        position: 'relative'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                            <h3 style={{
-                                                fontSize: '1.25rem',
-                                                fontWeight: 700,
-                                                margin: 0,
-                                                color: 'var(--color-primary)'
-                                            }}>
-                                                {car.year} {car.make} {car.model}
-                                            </h3>
-                                            {car.aiGrade && (
-                                                <div title={`Rated ${car.aiGrade.overallGrade}`} style={{ backgroundColor: '#2563eb', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.25rem 0.5rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <Shield size={12} fill="currentColor" /> {car.aiGrade.overallGrade}
+                                        {/* Image Area */}
+                                        <div style={{ height: '200px', backgroundColor: '#eee', position: 'relative' }}>
+                                            {car.imageUrls && car.imageUrls.length > 0 ? (
+                                                <img
+                                                    src={car.imageUrls[0]}
+                                                    alt={`${car.year} ${car.make} ${car.model}`}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                                                    No Photo
                                                 </div>
                                             )}
-                                        </div>
-                                        {car.trim && (
-                                            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', margin: '0.25rem 0 0' }}>
-                                                {car.trim}
-                                            </p>
-                                        )}
-                                    </div>
 
-                                    {/* Middle: Primary Image */}
-                                    <Link to={`/vehicle/${car.stockNumber}`} style={{ display: 'block', textDecoration: 'none' }}>
-                                        <div style={{ position: 'relative', height: '240px', overflow: 'hidden' }}>
-                                            {/* Heart Button */}
+                                            {/* Price Tag */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                left: 0,
+                                                backgroundColor: 'var(--color-primary)',
+                                                color: 'var(--color-gold)',
+                                                padding: '0.5rem 1rem',
+                                                fontWeight: 800,
+                                                fontSize: '1.25rem'
+                                            }}>
+                                                ${parseFloat(car.retail).toLocaleString()}
+                                            </div>
+
+                                            {/* Garage Heart */}
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
-                                                    e.stopPropagation();
                                                     toggleGarage(car);
                                                 }}
                                                 style={{
                                                     position: 'absolute',
                                                     top: '0.5rem',
                                                     right: '0.5rem',
-                                                    zIndex: 10,
                                                     background: 'rgba(255,255,255,0.9)',
+                                                    border: 'none',
                                                     borderRadius: '50%',
-                                                    width: '40px',
-                                                    height: '40px',
+                                                    width: '36px',
+                                                    height: '36px',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    border: 'none',
                                                     cursor: 'pointer',
-                                                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                                                    color: isInGarage(car.vin) ? '#ef4444' : '#ccc'
+                                                    color: isInGarage(car.stockNumber) ? '#ef4444' : '#ccc'
                                                 }}
-                                                title={isInGarage(car.vin) ? "Remove from Garage" : "Add to Garage"}
                                             >
-                                                <Heart fill={isInGarage(car.vin) ? '#ef4444' : 'none'} size={24} />
+                                                <Heart size={20} fill={isInGarage(car.stockNumber) ? '#ef4444' : 'none'} />
                                             </button>
+                                        </div>
 
-                                            {car.imageUrls && car.imageUrls.length > 0 ? (
-                                                <img
-                                                    src={car.imageUrls[0]}
-                                                    alt={`${car.year} ${car.make} ${car.model}`}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                />
-                                            ) : (
+                                        {/* Details Area */}
+                                        <div style={{ padding: '1.5rem' }}>
+                                            <div style={{ color: '#666', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+                                                {car.year}
+                                            </div>
+                                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: 'var(--color-text)' }}>
+                                                {car.make} {car.model} {car.trim}
+                                            </h3>
+
+                                            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#888', marginBottom: '1rem' }}>
+                                                <span>{parseInt(car.mileage).toLocaleString()} miles</span>
+                                                <span>•</span>
+                                                <span>Stock #{car.stockNumber}</span>
+                                            </div>
+
+                                            {/* Grade Badge */}
+                                            {car.aiGrade && (
                                                 <div style={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    backgroundColor: '#e2e8f0',
-                                                    display: 'flex',
+                                                    display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center'
+                                                    gap: '0.25rem',
+                                                    backgroundColor: '#f3f4f6',
+                                                    padding: '0.25rem 0.5rem',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700
                                                 }}>
-                                                    <p style={{ color: '#a0aec0', fontWeight: 500 }}>Photo Coming Soon</p>
+                                                    <Shield size={12} color="var(--color-primary)" />
+                                                    Grade: <span style={{ color: 'var(--color-primary)' }}>{car.aiGrade.overallGrade}</span>
                                                 </div>
                                             )}
                                         </div>
-                                    </Link>
-
-                                    {/* Bottom: Price and Mileage */}
-                                    <div style={{ padding: '1.25rem' }}>
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            marginBottom: '1rem'
-                                        }}>
-                                            <div>
-                                                <p style={{
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                    color: 'var(--color-text-light)',
-                                                    fontWeight: 600,
-                                                    marginBottom: '0.25rem'
-                                                }}>
-                                                    Price
-                                                </p>
-                                                <p style={{
-                                                    fontSize: '2rem',
-                                                    fontWeight: 900,
-                                                    color: 'var(--color-primary)',
-                                                    margin: 0
-                                                }}>
-                                                    ${parseFloat(car.retail) > 0 ? parseFloat(car.retail).toLocaleString() : 'Call'}
-                                                </p>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <p style={{
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                    color: 'var(--color-text-light)',
-                                                    fontWeight: 600,
-                                                    marginBottom: '0.25rem'
-                                                }}>
-                                                    Mileage
-                                                </p>
-                                                <p style={{
-                                                    fontSize: '1.125rem',
-                                                    fontWeight: 700,
-                                                    color: 'var(--color-dark)',
-                                                    margin: 0
-                                                }}>
-                                                    {parseFloat(car.mileage) > 0 ? parseFloat(car.mileage).toLocaleString() : 'N/A'}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <Link
-                                            to={`/vehicle/${car.stockNumber}`}
-                                            className="btn btn-primary"
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.875rem',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 700
-                                            }}
-                                        >
-                                            View Details
-                                        </Link>
                                     </div>
-                                </div>
-                            )) : (
-                                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem' }}>
-                                    <h3>No "Freedom Machines" found matching those criteria.</h3>
-                                    <button onClick={() => { setFilter(''); setPriceRange(50000); }} className="btn btn-outline" style={{ marginTop: '1rem' }}>Clear Filters</button>
-                                </div>
-                            )}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+
+                    {viewMode === 'manager' && (
+                        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                            <button onClick={handleDealerLogin} className="btn-link" style={{ fontSize: '0.875rem', color: '#999' }}>
+                                Manager Override
+                            </button>
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* Modal */}
+            {/* AutoGrader Modal */}
             {editingVehicle && (
                 <VehicleEditor
                     vehicle={editingVehicle}
@@ -474,30 +496,6 @@ const InventoryLive = () => {
                     onClose={() => setEditingVehicle(null)}
                 />
             )}
-
-            <footer style={{ backgroundColor: '#1e293b', color: 'white', padding: '3rem 0', marginTop: 'auto' }}>
-                <div className="container" style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1.5rem' }}>
-                        <a href="https://facebook.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Facebook</a>
-                        <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Twitter</a>
-                        <a href="https://instagram.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Instagram</a>
-                        <a href="https://youtube.com/playlist?list=PLl7IO3qjXvk6YT6yYeClM1Pn24H0uWGj4&si=fjk0H7RWbmkXIVJL" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>YouTube</a>
-                    </div>
-                    {/* Dealer Login - Hidden / Discrete */}
-                    <div style={{ marginTop: '2rem', opacity: 0.3 }}>
-                        {!isAuthenticated ? (
-                            <button
-                                onClick={handleDealerLogin}
-                                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 auto' }}
-                            >
-                                <Lock size={12} /> Dealer Login
-                            </button>
-                        ) : (
-                            <span style={{ fontSize: '0.75rem', color: '#22c55e' }}>● Authenticated as Manager</span>
-                        )}
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 };

@@ -77,7 +77,10 @@ function App() {
                   <div>
                     <h4 style={{ marginBottom: '1.5rem', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.1em' }}>Location</h4>
                     <p style={{ opacity: 0.7, fontSize: '0.875rem', marginBottom: '1rem' }}>
-                      519 2nd Street<br />Fort Madison, IA 52627<br />(309) 337-1049
+                      519 2nd Street<br />Fort Madison, IA 52627<br />
+                      <strong>Office:</strong> 319-372-8191<br />
+                      <strong>Miriam:</strong> 309-267-7200<br />
+                      <strong>Matt (Text Only):</strong> 309-337-1049
                     </p>
                     <a
                       href="https://maps.google.com/?q=519+2nd+Street+Fort+Madison+IA+52627"
@@ -90,23 +93,41 @@ function App() {
                         fontWeight: 700,
                         border: 'none',
                         padding: '0.5rem 1rem',
-                        fontSize: '0.875rem'
+                        fontSize: '0.875rem',
+                        marginBottom: '1rem',
+                        display: 'inline-block'
                       }}
                     >
                       Get Directions
                     </a>
                   </div>
+                  <div>
+                    <h4 style={{ marginBottom: '1.5rem', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.1em' }}>Follow Us</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
+                      <a href="https://www.facebook.com/highlifeauto" target="_blank" rel="noopener noreferrer" style={{ opacity: 0.7 }}>Facebook</a>
+                      <a href="https://www.instagram.com/highlifeauto/" target="_blank" rel="noopener noreferrer" style={{ opacity: 0.7 }}>Instagram</a>
+                      <a href="https://youtube.com/playlist?list=PLl7IO3qjXvk6YT6yYeClM1Pn24H0uWGj4&si=jiXuAusTJCEtdxtu" target="_blank" rel="noopener noreferrer" style={{ opacity: 0.7 }}>YouTube</a>
+                    </div>
+                  </div>
                 </div>
                 <div style={{
                   borderTop: '1px solid rgba(255,255,255,0.1)',
                   paddingTop: '2rem',
-                  textAlign: 'center',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
                   fontSize: '0.75rem',
-                  opacity: 0.5,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  opacity: 0.5
                 }}>
-                  &copy; {new Date().getFullYear()} High Life Auto. All Rights Reserved. No Junk, Just Freedom.
+                  <div>
+                    &copy; {new Date().getFullYear()} High Life Auto. All rights reserved.
+                  </div>
+                  <div>
+                    <a href="#" style={{ marginRight: '1rem' }}>Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                  </div>
                 </div>
               </div>
             </footer>

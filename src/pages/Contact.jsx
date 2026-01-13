@@ -25,11 +25,21 @@ const Contact = () => {
                                     <p>519 2nd Street<br />Fort Madison, IA 52627</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                <Phone size={24} color="var(--color-gold)" />
+                            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+                                <Phone size={24} color="var(--color-gold)" style={{ marginTop: '0.25rem' }} />
                                 <div>
                                     <h3 style={{ marginBottom: '0.5rem' }}>Call or Text</h3>
-                                    <p>(309) 337-1049</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <div>
+                                            <span style={{ fontWeight: 600 }}>Office:</span> <a href="tel:+13193728191" style={{ color: 'inherit' }}>319-372-8191</a>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontWeight: 600 }}>Miriam:</span> <a href="tel:+13092677200" style={{ color: 'inherit' }}>309-267-7200</a>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontWeight: 600 }}>Matt (Text Only):</span> <a href="sms:+13093371049" style={{ color: 'inherit' }}>309-337-1049</a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '1.5rem' }}>
@@ -50,7 +60,7 @@ const Contact = () => {
                                     {/* Real embed would go here */}
                                     <iframe
                                         title="map"
-                                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.142293761919!2d-73.98731968459422!3d40.75889497932681!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855c6480293%3A0x5119f444669d7212!2sTimes%20Square!5e0!3m2!1sen!2sus!4v1625150000000!5m2!1sen!2sus"
+                                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d11340.0!2d-91.31!3d40.63!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDM3JzQ4LjAiTiA5McKwMTgnMzYuMCJX!5e0!3m2!1sen!2sus!4v1625150000000!5m2!1sen!2sus"
                                         width="100%"
                                         height="100%"
                                         style={{ border: 0 }}
