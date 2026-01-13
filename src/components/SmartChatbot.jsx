@@ -21,7 +21,7 @@ import {
     Minimize2
 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { loadInventoryFromFrazerCSV } from '../services/FrazerFeedService';
+
 import './SmartChatbot.css'; // Re-use the CSS for container/bubble styles
 
 // --- Configuration ---
@@ -126,15 +126,8 @@ const SmartChatbot = () => {
         setKnowledge(mockDb.get('knowledge'));
 
         // Load Inventory from Real Source
-        const fetchInv = async () => {
-            try {
-                const data = await loadInventoryFromFrazerCSV('/frazer-inventory.csv');
-                setInventory(data);
-            } catch (e) {
-                console.error("Failed to load inventory for bot", e);
-            }
-        };
-        fetchInv();
+        // Inventory Feed Removed - Placeholder
+        setInventory([]);
 
         // Poll for changes (pseudo-realtime)
         const interval = setInterval(() => {

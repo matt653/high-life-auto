@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart } from 'lucide-react';
-import { loadInventoryFromFrazerCSV, analyzeVideoTranscript } from '../services/FrazerFeedService';
+
 import { useGarage } from '../context/GarageContext';
 
 const VehicleDetailLive = () => {
@@ -24,15 +24,9 @@ const VehicleDetailLive = () => {
     const loadVehicle = async () => {
         setLoading(true);
         try {
-            const inventory = await loadInventoryFromFrazerCSV('/frazer-inventory.csv');
-            const vehicle = inventory.find(v => v.stock === id || v.id === id);
-            setCar(vehicle);
-
-            // If car has YouTube video, analyze it for grading
-            if (vehicle && vehicle.youtubeVideoUrl) {
-                const grade = await analyzeVideoTranscript(vehicle.youtubeVideoUrl, vehicle);
-                setVehicleGrade(grade);
-            }
+            // Placeholder for new vehicle loading logic
+            setCar(null);
+            setVehicleGrade(null);
         } catch (error) {
             console.error('Error loading vehicle:', error);
         } finally {

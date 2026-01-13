@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, Info, Camera, Play, CheckCircle2, Award, AlertTriangle } from 'lucide-react';
 import { mockInventory } from '../data/mockInventory';
-import { analyzeVideoTranscript } from '../services/FrazerFeedService';
+
 
 const VehicleDetailWithGrade = () => {
     const { id } = useParams();
@@ -13,10 +13,9 @@ const VehicleDetailWithGrade = () => {
         window.scrollTo(0, 0);
 
         // If car has a YouTube video, analyze it for grading
+        // Video analysis removed
         if (car && car.youtubeVideoUrl) {
-            analyzeVideoTranscript(car.youtubeVideoUrl, car).then(grade => {
-                setVehicleGrade(grade);
-            });
+            setVehicleGrade(null);
         }
     }, [car]);
 

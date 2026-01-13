@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Banknote, HeartHandshake, ArrowRight, Mail, Wrench } from 'lucide-react';
-import { loadInventoryFromFrazerCSV } from '../services/FrazerFeedService';
+
 import { motion } from 'framer-motion';
 
 const Homepage = () => {
@@ -10,18 +10,8 @@ const Homepage = () => {
 
     useEffect(() => {
         const loadCars = async () => {
-            try {
-                const inventory = await loadInventoryFromFrazerCSV('/frazer-inventory.csv');
-                // Filter: Available, has photos, AND under $5000
-                const available = inventory
-                    .filter(c => c.price > 0 && c.price < 5000 && c.photos.length > 0)
-                    .slice(0, 6); // Show 6 cars
-                setFeaturedCars(available);
-            } catch (err) {
-                console.error("Failed to load homepage inventory", err);
-            } finally {
-                setLoading(false);
-            }
+            setFeaturedCars([]);
+            setLoading(false);
         };
         loadCars();
     }, []);

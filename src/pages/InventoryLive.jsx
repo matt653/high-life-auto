@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, AlertCircle, RefreshCw, Heart } from 'lucide-react';
-import { loadInventoryFromFrazerCSV } from '../services/FrazerFeedService';
+
 import { useGarage } from '../context/GarageContext';
 
 const InventoryLive = () => {
@@ -19,22 +19,10 @@ const InventoryLive = () => {
     const loadInventory = async () => {
         setLoading(true);
         try {
-            const data = await loadInventoryFromFrazerCSV('/frazer-inventory.csv');
-            // Sort by price: Low to High by default, forcing 0 (Call for Price) to the bottom
-            const sortedData = data.sort((a, b) => {
-                const priceA = a.price || 0;
-                const priceB = b.price || 0;
-                if (priceA === 0 && priceB === 0) return 0;
-                if (priceA === 0) return 1;
-                if (priceB === 0) return -1;
-                return priceA - priceB;
-            });
-            setInventory(sortedData);
+            // Placeholder for new inventory loading logic
+            // const data = await loadSomeInventory();
+            setInventory([]);
             setLastSync(new Date());
-
-            // Calculate max price from inventory
-            const maxPrice = Math.max(...data.map(car => car.price || 0), 25000);
-            setPriceRange(maxPrice);
         } catch (error) {
             console.error('Error loading inventory:', error);
         } finally {

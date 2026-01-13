@@ -46,7 +46,7 @@ const parseCSV = (csv) => {
     });
 };
 
-import { loadInventoryFromFrazerCSV } from '../services/FrazerFeedService';
+
 
 // ... (parseCSV function remains for manual imports)
 
@@ -97,53 +97,9 @@ const Showroom = () => {
                 }
             }
 
-            // Fetch Real Data from CSV
-            try {
-                const externalData = await loadInventoryFromFrazerCSV();
-
-                if (externalData && externalData.length > 0) {
-                    // Map External Data
-                    const mapped = externalData.map(v => ({
-                        vin: v.vin,
-                        stockNumber: v.stock,
-                        make: v.make,
-                        model: v.model,
-                        trim: v.trim,
-                        year: String(v.year),
-                        mileage: String(v.mileage),
-                        retail: v.price.toFixed(2),
-                        cost: '0.00',
-                        youtubeUrl: v.youtubeUrl || '',
-                        imageUrls: v.photos || [],
-                        comments: v.rawComments || '',
-                        options: v.options || '', // Now correctly pulling from service
-                        type: v.bodyStyle,
-                    }));
-
-                    // SMART MERGE: Use CSV as the "Master List", but attach saved AI data from LocalStorage
-                    const merged = mapped.map(newVehicle => {
-                        const existing = localData.find(l => l.vin === newVehicle.vin);
-                        if (existing && existing.aiGrade) {
-                            return {
-                                ...newVehicle,
-                                aiGrade: existing.aiGrade,
-                                marketingDescription: existing.marketingDescription,
-                                websiteNotes: existing.websiteNotes,
-                                groundingSources: existing.groundingSources
-                            };
-                        }
-                        return newVehicle;
-                    });
-
-                    console.log(`Loaded ${merged.length} vehicles from Live CSV`);
-                    setVehicles(merged);
-                } else if (!savedData) {
-                    // Fallback only if absolutely nothing else exists
-                    setVehicles(parseCSV(RAW_VEHICLE_CSV));
-                }
-            } catch (e) {
-                console.error("Failed to load CSV", e);
-                if (!savedData && vehicles.length === 0) setVehicles(parseCSV(RAW_VEHICLE_CSV));
+            // Only load from LocalStorage or Fallback for now - Feed Removed
+            if (!savedData && vehicles.length === 0) {
+                setVehicles(parseCSV(RAW_VEHICLE_CSV));
             }
         };
         loadData();
