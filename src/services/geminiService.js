@@ -40,7 +40,8 @@ export const analyzeVehicle = async (vehicle) => {
     3. **Grade**: Generate the 5-point report card.
     4. **Write Copy**: Generate a "Marketing Description" for the website.
        - **Reference the video directly**: "In the test drive, Miriam noted..." or "As heard in the video..."
-       - Tone: Professional, honest, upbeat.
+       - **CONSTRAINT**: Do NOT mention the Stock Number in this text.
+       - Tone: Informative, objective, helpful, and honest. Avoid "salesy" language or hype. Just facts and observations.
        - Formatting: HTML tags <p>, <ul>, <li>, <strong>.
     5. **Honest Blemishes**: List specific cosmetic or mechanical flaws mentioned in the video or notes (e.g., "Scratch on rear bumper", "Tear in driver seat"). Be specific. If none, return an empty list.
 
