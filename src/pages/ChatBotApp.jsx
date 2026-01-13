@@ -198,10 +198,10 @@ const ChatBotApp = () => {
                     ) : (
                         <button
                             onClick={handleAdminAuth}
-                            className="p-2 rounded-full text-gray-300 hover:text-gray-900 transition-colors"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-400 transition-colors text-[10px] font-bold uppercase tracking-wide"
                             title="Staff Login"
                         >
-                            <Lock size={14} />
+                            <Lock size={12} /> Staff Login
                         </button>
                     )}
                 </div>
