@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const apiKey = process.env.VITE_GEMINI_API_KEY || "AIzaSyBjyT8TsGpcA8ureyU989vbHqWKywBPAPg";
+const apiKey = process.env.VITE_GEMINI_API_KEY;
 
 async function listModels() {
     const genAI = new GoogleGenerativeAI(apiKey);
