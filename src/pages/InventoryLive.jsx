@@ -159,6 +159,7 @@ const InventoryLive = () => {
     }, [googleSheetUrl, lastSyncTime]);
 
     // 3. Smart Sync Logic
+    // 3. Smart Sync Logic
     const performSmartSync = useCallback(async (manual = false) => {
         if (!googleSheetUrl) return;
 
@@ -177,23 +178,37 @@ const InventoryLive = () => {
                 throw new Error("Parsed CSV was empty");
             }
 
-            // Merge logic: Preserve AI content from local storage
+            // Merge logic: Robustly Preserve AI content
             const localMap = new Map();
-            vehicles.forEach(v => localMap.set(v.vin, v));
+            vehicles.forEach(v => {
+                if (v.vin) localMap.set(v.vin.trim().toUpperCase(), v);
+            });
 
             const mergedVehicles = remoteInventory.map(remoteVehicle => {
-                const localMatch = localMap.get(remoteVehicle.vin);
+                // Normalize Remote VIN
+                const rVin = remoteVehicle.vin ? remoteVehicle.vin.trim().toUpperCase() : '';
+                const localMatch = localMap.get(rVin);
+
                 if (localMatch) {
-                    // STRICT SYNC RULE:
-                    // If vehicle exists, PRESERVE all local edits (Make, Model, Options, AI Grade, Website Notes, etc.)
-                    // ONLY update dynamic fields from the feed: Price, Mileage, Cost, and Internal Comments.
+                    // STRICT PERSISTENCE:
+                    // We must ensure that any graded/edited data is NEVER overwritten by the raw CSV.
                     return {
-                        ...localMatch,
-                        retail: remoteVehicle.retail,
-                        mileage: remoteVehicle.mileage,
-                        cost: remoteVehicle.cost,
-                        comments: remoteVehicle.comments,
-                        // Update timestamp only if something actually changed? For now, we update it to show it was checked.
+                        // 1. Take the FRESH data from the CSV (Price, Mileage, etc.)
+                        ...remoteVehicle,
+
+                        // 2. OVERWRITE with preserved Local User Data if it exists
+                        // This ensures that even if we parsed a field from CSV, the Local edit wins 
+                        // for these specific "Creative/AI" fields.
+                        aiGrade: localMatch.aiGrade,
+                        marketingDescription: localMatch.marketingDescription,
+                        blemishes: localMatch.blemishes,
+                        groundingSources: localMatch.groundingSources,
+                        websiteNotes: localMatch.websiteNotes,
+
+                        // 3. Keep stable ID if needed
+                        id: localMatch.id || remoteVehicle.id,
+
+                        // 4. Update sync timestamp
                         lastUpdated: Date.now()
                     };
                 }
