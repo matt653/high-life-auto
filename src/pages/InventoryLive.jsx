@@ -528,19 +528,22 @@ const InventoryLive = () => {
                                             </div>
 
                                             {/* Grade Badge */}
+                                            {/* Grade Badge */}
                                             {car.aiGrade && (
                                                 <div style={{
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
                                                     gap: '0.25rem',
-                                                    backgroundColor: '#f3f4f6',
+                                                    backgroundColor: car.aiGrade.overallGrade ? '#dcfce7' : '#f3f4f6',
+                                                    color: car.aiGrade.overallGrade ? '#166534' : '#666',
                                                     padding: '0.25rem 0.5rem',
                                                     borderRadius: '4px',
                                                     fontSize: '0.75rem',
-                                                    fontWeight: 700
+                                                    fontWeight: 800,
+                                                    border: car.aiGrade.overallGrade ? '1px solid #bbf7d0' : 'none'
                                                 }}>
-                                                    <Shield size={12} color="var(--color-primary)" />
-                                                    Grade: <span style={{ color: 'var(--color-primary)' }}>{car.aiGrade.overallGrade}</span>
+                                                    <Shield size={12} fill={car.aiGrade.overallGrade ? "#166534" : "#ccc"} />
+                                                    {car.aiGrade.overallGrade ? `Grade: ${car.aiGrade.overallGrade}` : 'Graded (Reviewing)'}
                                                 </div>
                                             )}
                                         </div>
