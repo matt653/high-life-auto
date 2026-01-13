@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
     Car,
     ExternalLink,
-    Bot
+    Bot,
+    Lock
 } from 'lucide-react';
 import {
     collection,
@@ -155,6 +156,15 @@ const ChatBotApp = () => {
         }
     };
 
+    const handleAdminAuth = () => {
+        const password = prompt("Enter Master Password:");
+        if (password === "Highlife8191!") {
+            setView('admin');
+        } else {
+            alert("Access Denied");
+        }
+    };
+
     if (!user) return (
         <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-white font-black italic tracking-tighter">
             <Car className="animate-bounce mr-2" />
@@ -167,7 +177,7 @@ const ChatBotApp = () => {
             {/* GLOBAL HEADER */}
             <header className="bg-white border-b px-6 py-3 flex justify-between items-center z-20 shadow-sm shrink-0">
                 <div className="flex items-center space-x-3">
-                    <div className="bg-orange-600 p-2 rounded-lg text-white shadow-lg rotate-3">
+                    <div className="bg-orange-600 p-2 rounded-lg text-white shadow-lg rotate-3" onClick={handleAdminAuth}>
                         <Car size={22} />
                     </div>
                     <div>
@@ -176,20 +186,24 @@ const ChatBotApp = () => {
                     </div>
                 </div>
 
-                {/* View Switcher */}
-                <div className="flex bg-gray-100 p-1 rounded-full border">
-                    <button
-                        onClick={() => setView('visitor')}
-                        className={`flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all ${view === 'visitor' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-800'}`}
-                    >
-                        <Bot size={14} /> Visitor View
-                    </button>
-                    <button
-                        onClick={() => setView('admin')}
-                        className={`flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all ${view === 'admin' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-800'}`}
-                    >
-                        <ExternalLink size={14} /> Admin CRM
-                    </button>
+                {/* View Switcher Controls */}
+                <div className="flex gap-2">
+                    {view === 'admin' ? (
+                        <button
+                            onClick={() => setView('visitor')}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-wide hover:bg-gray-200"
+                        >
+                            Exit CRM
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleAdminAuth}
+                            className="p-2 rounded-full text-gray-300 hover:text-gray-900 transition-colors"
+                            title="Staff Login"
+                        >
+                            <Lock size={14} />
+                        </button>
+                    )}
                 </div>
             </header>
 

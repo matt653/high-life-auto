@@ -71,7 +71,7 @@ function App() {
                   <div>
                     <h4 style={{ marginBottom: '1.5rem', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.1em' }}>Quick Links</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
-                      <a href="/inventory" style={{ opacity: 0.7 }}>Showroom</a>
+                      <a href="/inventory" style={{ opacity: 0.7 }}>Inventory</a>
                       <a href="/about" style={{ opacity: 0.7 }}>Our Why</a>
                       <a href="/contact" style={{ opacity: 0.7 }}>Visit Us</a>
                     </div>

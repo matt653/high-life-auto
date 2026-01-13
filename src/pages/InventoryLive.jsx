@@ -114,7 +114,8 @@ const InventoryLive = () => {
             if (rawParsed.length > 0) {
                 setVehicles(rawParsed);
             } else {
-                // Fallback 2: Hardcoded Emergency Data (So page is never blank)
+                // Fallback 2: Hardcoded Emergency Data
+                // We load this so something shows, but we also rely on the smart sync effect to catch us.
                 console.warn("No inventory source found. Loading Emergency Fallback.");
                 setVehicles([
                     {
@@ -148,7 +149,7 @@ const InventoryLive = () => {
 
     // 2. Persist Data
     useEffect(() => {
-        if (vehicles.length > 0) {
+        if (vehicles.length > 0 && vehicles[0].stockNumber !== 'FALLBACK-001') {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
         }
     }, [vehicles]);
@@ -212,9 +213,16 @@ const InventoryLive = () => {
         }
     }, [googleSheetUrl, vehicles]);
 
-    // 4. Auto Sync Interval
+    // 4. Auto Sync Interval (AND INITIAL LOAD RESCUE)
     useEffect(() => {
         if (!googleSheetUrl) return;
+
+        // IMMEDIATE RESCUE: If we have fallback data or very little data, run a sync immediately on mount.
+        if (vehicles.length <= 2 && (vehicles.length === 0 || vehicles[0].stockNumber === 'FALLBACK-001')) {
+            console.log("Triggering immediate rescue sync...");
+            performSmartSync(false);
+        }
+
         const intervalId = setInterval(() => {
             const now = new Date();
             const currentHour = now.getHours();
@@ -223,7 +231,7 @@ const InventoryLive = () => {
             }
         }, 60 * 60 * 1000);
         return () => clearInterval(intervalId);
-    }, [googleSheetUrl, performSmartSync]);
+    }, [googleSheetUrl, performSmartSync, vehicles.length]);
 
 
     // --- Filtering Logic ---
@@ -284,7 +292,16 @@ const InventoryLive = () => {
                     {/* Header / Mode Switcher */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                         <div>
-                            <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
+                                <button
+                                    onClick={handleDealerLogin}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3, padding: '0.25rem' }}
+                                    title="Manager Access"
+                                >
+                                    <Lock size={14} />
+                                </button>
+                            </div>
                             <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <AlertCircle size={16} color="var(--color-accent)" />
                                 Live inventory from Frazer DMS
