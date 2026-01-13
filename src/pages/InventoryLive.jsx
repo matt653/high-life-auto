@@ -79,7 +79,12 @@ const InventoryLive = () => {
         const savedSettings = localStorage.getItem(SETTINGS_KEY);
         if (savedSettings) {
             const parsed = JSON.parse(savedSettings);
-            setGoogleSheetUrl(parsed.googleSheetUrl || DEFAULT_CSV_URL);
+            // Fix: If saved URL is the old remote one, revert to local relative path
+            if (parsed.googleSheetUrl === "https://highlifeauto.com/frazer-inventory-updated.csv") {
+                setGoogleSheetUrl(DEFAULT_CSV_URL);
+            } else {
+                setGoogleSheetUrl(parsed.googleSheetUrl || DEFAULT_CSV_URL);
+            }
             setLastSyncTime(parsed.lastSyncTime || null);
         }
 
@@ -129,15 +134,20 @@ const InventoryLive = () => {
             const mergedVehicles = remoteInventory.map(remoteVehicle => {
                 const localMatch = localMap.get(remoteVehicle.vin);
                 if (localMatch) {
+                    // STRICT SYNC RULE:
+                    // If vehicle exists, PRESERVE all local edits (Make, Model, Options, AI Grade, Website Notes, etc.)
+                    // ONLY update dynamic fields from the feed: Price, Mileage, Cost, and Internal Comments.
                     return {
-                        ...remoteVehicle, // New price/miles
-                        marketingDescription: localMatch.marketingDescription,
-                        aiGrade: localMatch.aiGrade,
-                        groundingSources: localMatch.groundingSources,
-                        websiteNotes: localMatch.websiteNotes,
-                        lastUpdated: localMatch.lastUpdated || Date.now()
+                        ...localMatch,
+                        retail: remoteVehicle.retail,
+                        mileage: remoteVehicle.mileage,
+                        cost: remoteVehicle.cost,
+                        comments: remoteVehicle.comments,
+                        // Update timestamp only if something actually changed? For now, we update it to show it was checked.
+                        lastUpdated: Date.now()
                     };
                 }
+                // New Vehicle: Take full CSV data
                 return remoteVehicle;
             });
 

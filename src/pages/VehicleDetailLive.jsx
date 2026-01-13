@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart } from 'lucide-react';
+import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart, AlertCircle } from 'lucide-react';
 
 import { useGarage } from '../context/GarageContext';
 
@@ -276,6 +276,35 @@ const VehicleDetailLive = () => {
                             <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#666' }}>
                                 {car.mileage > 0 ? `${car.mileage.toLocaleString()} Miles` : 'Mileage TBD'} • VIN: {car.vin}
                             </p>
+
+                            {/* Special Online Notes (Manager Override) */}
+                            {car.websiteNotes && (
+                                <div style={{
+                                    backgroundColor: '#fff1f2', // Light red/pink
+                                    border: '2px solid #e11d48',
+                                    borderRadius: '0.5rem',
+                                    padding: '1.5rem',
+                                    marginBottom: '2rem',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    <h2 style={{
+                                        fontSize: '1.25rem',
+                                        marginBottom: '0.75rem',
+                                        color: '#be123c',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontWeight: 800,
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        <AlertCircle size={24} />
+                                        Special Online Notes
+                                    </h2>
+                                    <p style={{ fontSize: '1.125rem', fontWeight: 600, color: '#881337', margin: 0, lineHeight: '1.5' }}>
+                                        {car.websiteNotes}
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Brief AI Description */}
                             <div style={{
