@@ -1,78 +1,250 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, AlertCircle, RefreshCw, Heart } from 'lucide-react';
+import { Search, AlertCircle, RefreshCw, Heart, Settings, Shield, Lock } from 'lucide-react';
 
 import { useGarage } from '../context/GarageContext';
+import InventoryTable from '../components/AutoGrader/InventoryTable';
+import VehicleEditor from '../components/AutoGrader/VehicleEditor';
+import { RAW_VEHICLE_CSV } from '../components/AutoGrader/constants';
+import '../components/AutoGrader/AutoGrader.css';
+
+// Default CSV URL provided in the original tool
+const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
+
+const parseCSV = (csv) => {
+    const lines = csv.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+
+    return lines.slice(1).filter(line => line.trim() !== '').map(line => {
+        // Handle CSV parsing with potential commas inside quotes
+        const values = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === '"') inQuotes = !inQuotes;
+            else if (line[i] === ',' && !inQuotes) {
+                values.push(current.trim());
+                current = '';
+            } else {
+                current += line[i];
+            }
+        }
+        values.push(current.trim());
+
+        const get = (h) => (values[headers.indexOf(h)] || "").replace(/"/g, '').trim();
+
+        return {
+            vin: get("Vehicle Vin"),
+            stockNumber: get("Stock Number"),
+            make: get("Vehicle Make"),
+            model: get("Vehicle Model"),
+            trim: get("Vehicle Trim Level"),
+            year: get("Vehicle Year"),
+            mileage: get("Mileage"),
+            retail: get("Retail"),
+            cost: get("Cost"),
+            youtubeUrl: get("YouTube URL"),
+            imageUrls: get("Image URL").split('|'),
+            comments: get("Comments"),
+            options: get("Option List"),
+            type: get("Vehicle Type")
+        };
+    });
+};
 
 const InventoryLive = () => {
-    const [inventory, setInventory] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // --- AutoGrader State ---
+    const [vehicles, setVehicles] = useState([]);
+    const [editingVehicle, setEditingVehicle] = useState(null);
+
+    // Auth & View Mode
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [viewMode, setViewMode] = useState('public'); // Default to public
+
+    const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
+    const [lastSyncTime, setLastSyncTime] = useState(null);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    // --- Public Viewer State ---
     const [filter, setFilter] = useState('');
-    const [priceRange, setPriceRange] = useState(25000);
-    const [lastSync, setLastSync] = useState(null);
+    const [priceRange, setPriceRange] = useState(50000);
     const { toggleGarage, isInGarage } = useGarage();
 
+    // Persistence Keys
+    const STORAGE_KEY = 'highlife_inventory_v1';
+    const SETTINGS_KEY = 'highlife_settings_v1';
+
+    // 1. Initial Data Load
     useEffect(() => {
-        loadInventory();
+        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+        if (savedSettings) {
+            const parsed = JSON.parse(savedSettings);
+            setGoogleSheetUrl(parsed.googleSheetUrl || DEFAULT_CSV_URL);
+            setLastSyncTime(parsed.lastSyncTime || null);
+        }
+
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            try {
+                setVehicles(JSON.parse(savedData));
+            } catch (e) {
+                console.error("Failed to parse local storage", e);
+                setVehicles(parseCSV(RAW_VEHICLE_CSV));
+            }
+        } else {
+            setVehicles(parseCSV(RAW_VEHICLE_CSV));
+        }
     }, []);
 
-    const loadInventory = async () => {
-        setLoading(true);
-        try {
-            // Placeholder for new inventory loading logic
-            // const data = await loadSomeInventory();
-            setInventory([]);
-            setLastSync(new Date());
-        } catch (error) {
-            console.error('Error loading inventory:', error);
-        } finally {
-            setLoading(false);
+    // 2. Persist Data
+    useEffect(() => {
+        if (vehicles.length > 0) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
         }
+    }, [vehicles]);
+
+    useEffect(() => {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ googleSheetUrl, lastSyncTime }));
+    }, [googleSheetUrl, lastSyncTime]);
+
+    // 3. Smart Sync Logic
+    const performSmartSync = useCallback(async (manual = false) => {
+        if (!googleSheetUrl) return;
+
+        setIsSyncing(true);
+        try {
+            const cacheBuster = `?t=${new Date().getTime()}`;
+            const fetchUrl = googleSheetUrl.includes('?') ? `${googleSheetUrl}&t=${new Date().getTime()}` : `${googleSheetUrl}${cacheBuster}`;
+
+            const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error("Failed to fetch CSV feed");
+            const csvText = await response.text();
+
+            const remoteInventory = parseCSV(csvText);
+
+            // Merge logic: Preserve AI content from local storage
+            const localMap = new Map();
+            vehicles.forEach(v => localMap.set(v.vin, v));
+
+            const mergedVehicles = remoteInventory.map(remoteVehicle => {
+                const localMatch = localMap.get(remoteVehicle.vin);
+                if (localMatch) {
+                    return {
+                        ...remoteVehicle, // New price/miles
+                        marketingDescription: localMatch.marketingDescription,
+                        aiGrade: localMatch.aiGrade,
+                        groundingSources: localMatch.groundingSources,
+                        websiteNotes: localMatch.websiteNotes,
+                        lastUpdated: localMatch.lastUpdated || Date.now()
+                    };
+                }
+                return remoteVehicle;
+            });
+
+            setVehicles(mergedVehicles);
+            setLastSyncTime(new Date().toLocaleString());
+            if (manual) alert("Sync Complete!");
+
+        } catch (error) {
+            console.error("Sync Error:", error);
+            if (manual) alert("Failed to sync.");
+        } finally {
+            setIsSyncing(false);
+        }
+    }, [googleSheetUrl, vehicles]);
+
+    // 4. Auto Sync Interval
+    useEffect(() => {
+        if (!googleSheetUrl) return;
+        const intervalId = setInterval(() => {
+            const now = new Date();
+            const currentHour = now.getHours();
+            if (currentHour >= 8 && currentHour <= 19) {
+                performSmartSync(false);
+            }
+        }, 60 * 60 * 1000);
+        return () => clearInterval(intervalId);
+    }, [googleSheetUrl, performSmartSync]);
+
+
+    // --- Filtering Logic ---
+    const filteredCars = useMemo(() => {
+        return vehicles.filter(car =>
+            (car.make?.toLowerCase().includes(filter.toLowerCase()) ||
+                car.model?.toLowerCase().includes(filter.toLowerCase()) ||
+                car.year?.toString().includes(filter) ||
+                car.stockNumber?.toLowerCase().includes(filter.toLowerCase())) &&
+            (parseFloat(car.retail || '0') <= priceRange)
+        ).sort((a, b) => {
+            // Basic sort by price
+            return (parseFloat(a.retail) || 0) - (parseFloat(b.retail) || 0);
+        });
+    }, [vehicles, filter, priceRange]);
+
+
+    const handleSaveVehicle = (updatedVehicle) => {
+        setVehicles(prev => prev.map(v => v.vin === updatedVehicle.vin ? updatedVehicle : v));
+        setEditingVehicle(null);
     };
 
-    const filteredCars = inventory.filter(car =>
-        (car.make?.toLowerCase().includes(filter.toLowerCase()) ||
-            car.model?.toLowerCase().includes(filter.toLowerCase()) ||
-            car.year?.toString().includes(filter)) &&
-        (car.price || 0) <= priceRange
-    ).sort((a, b) => {
-        const priceA = a.price || 0;
-        const priceB = b.price || 0;
-        if (priceA === 0 && priceB === 0) return 0;
-        if (priceA === 0) return 1;
-        if (priceB === 0) return -1;
-        return priceA - priceB;
-    });
+    const handleDealerLogin = () => {
+        const password = prompt("Enter Dealer Password:");
+        if (password === "Highlife8191!") {
+            setIsAuthenticated(true);
+            setViewMode('manager');
+            alert("Authenticated! Welcome to the Back Office.");
+        } else {
+            alert("Incorrect password.");
+        }
+    };
 
     return (
         <div className="inventory-page">
             <section style={{ backgroundColor: '#f9f9f9', padding: '3rem 0', borderBottom: '1px solid var(--color-border)' }}>
                 <div className="container">
+
+                    {/* Header / Mode Switcher */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                         <div>
                             <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
                             <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <AlertCircle size={16} color="var(--color-accent)" />
                                 Live inventory from Frazer DMS
-                                {lastSync && ` • Last synced: ${lastSync.toLocaleTimeString()}`}
+                                {lastSyncTime && ` • Synced: ${lastSyncTime}`}
                             </p>
                         </div>
-                        <button
-                            onClick={loadInventory}
-                            className="btn btn-outline"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                        >
-                            <RefreshCw size={18} /> Refresh Feed
-                        </button>
+
+                        {/* Manager Controls - Only visible if Authenticated */}
+                        {isAuthenticated && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                    onClick={() => setViewMode(viewMode === 'manager' ? 'public' : 'manager')}
+                                    className="btn btn-outline"
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    <Settings size={18} /> {viewMode === 'manager' ? 'Switch to Public View' : 'Switch to Manager View'}
+                                </button>
+                                <button
+                                    onClick={() => performSmartSync(true)}
+                                    className="btn btn-primary"
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    disabled={isSyncing}
+                                >
+                                    <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} /> {isSyncing ? 'Syncing...' : 'Sync Feed'}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
+                    {/* Filter Controls (Available in both modes, but styled slightly differently if needed) */}
                     <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
                         gap: '1rem',
                         backgroundColor: 'white',
                         padding: '1.5rem',
-                        border: '1px solid var(--color-border)'
+                        border: '1px solid var(--color-border)',
+                        marginBottom: '2rem'
                     }}>
                         <div style={{ flex: '1 1 300px', position: 'relative' }}>
                             <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
@@ -97,7 +269,7 @@ const InventoryLive = () => {
                             <input
                                 type="range"
                                 min="1000"
-                                max="30000"
+                                max="100000"
                                 step="500"
                                 value={priceRange}
                                 onChange={(e) => setPriceRange(parseInt(e.target.value))}
@@ -106,32 +278,21 @@ const InventoryLive = () => {
                         </div>
                     </div>
 
-                    {loading && (
-                        <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', marginTop: '1rem' }}>
-                            <RefreshCw size={32} style={{ animation: 'spin 1s linear infinite' }} />
-                            <p style={{ marginTop: '1rem' }}>Loading live inventory from Frazer DMS...</p>
-                            <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
-                        </div>
-                    )}
-                </div>
-            </section>
 
-            {!loading && (
-                <section>
-                    <div className="container">
-                        <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                            <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                                {filteredCars.length} Freedom Machine{filteredCars.length !== 1 ? 's' : ''} Available
-                            </p>
-                        </div>
-
+                    {/* Content View */}
+                    {viewMode === 'manager' ? (
+                        <InventoryTable
+                            vehicles={filteredCars}
+                            onEdit={setEditingVehicle}
+                        />
+                    ) : (
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                             gap: '2.5rem'
                         }}>
                             {filteredCars.length > 0 ? filteredCars.map((car) => (
-                                <div key={car.id} style={{
+                                <div key={car.vin} style={{
                                     border: '2px solid var(--color-border)',
                                     backgroundColor: 'white',
                                     overflow: 'hidden',
@@ -147,14 +308,21 @@ const InventoryLive = () => {
                                         borderBottom: '1px solid var(--color-border)',
                                         backgroundColor: 'var(--color-secondary)'
                                     }}>
-                                        <h3 style={{
-                                            fontSize: '1.25rem',
-                                            fontWeight: 700,
-                                            margin: 0,
-                                            color: 'var(--color-primary)'
-                                        }}>
-                                            {car.year} {car.make} {car.model}
-                                        </h3>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <h3 style={{
+                                                fontSize: '1.25rem',
+                                                fontWeight: 700,
+                                                margin: 0,
+                                                color: 'var(--color-primary)'
+                                            }}>
+                                                {car.year} {car.make} {car.model}
+                                            </h3>
+                                            {car.aiGrade && (
+                                                <div title={`Rated ${car.aiGrade.overallGrade}`} style={{ backgroundColor: '#2563eb', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.25rem 0.5rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <Shield size={12} fill="currentColor" /> {car.aiGrade.overallGrade}
+                                                </div>
+                                            )}
+                                        </div>
                                         {car.trim && (
                                             <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', margin: '0.25rem 0 0' }}>
                                                 {car.trim}
@@ -163,13 +331,13 @@ const InventoryLive = () => {
                                     </div>
 
                                     {/* Middle: Primary Image */}
-                                    <Link to={`/vehicle/${car.stock}`} style={{ display: 'block', textDecoration: 'none' }}>
+                                    <Link to={`/vehicle/${car.stockNumber}`} style={{ display: 'block', textDecoration: 'none' }}>
                                         <div style={{ position: 'relative', height: '240px', overflow: 'hidden' }}>
                                             {/* Heart Button */}
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
-                                                    e.stopPropagation(); // Safe guard
+                                                    e.stopPropagation();
                                                     toggleGarage(car);
                                                 }}
                                                 style={{
@@ -187,16 +355,16 @@ const InventoryLive = () => {
                                                     border: 'none',
                                                     cursor: 'pointer',
                                                     boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                                                    color: isInGarage(car.id) ? '#ef4444' : '#ccc'
+                                                    color: isInGarage(car.vin) ? '#ef4444' : '#ccc'
                                                 }}
-                                                title={isInGarage(car.id) ? "Remove from Garage" : "Add to Garage"}
+                                                title={isInGarage(car.vin) ? "Remove from Garage" : "Add to Garage"}
                                             >
-                                                <Heart fill={isInGarage(car.id) ? '#ef4444' : 'none'} size={24} />
+                                                <Heart fill={isInGarage(car.vin) ? '#ef4444' : 'none'} size={24} />
                                             </button>
 
-                                            {car.photos && car.photos.length > 0 ? (
+                                            {car.imageUrls && car.imageUrls.length > 0 ? (
                                                 <img
-                                                    src={car.photos[0]}
+                                                    src={car.imageUrls[0]}
                                                     alt={`${car.year} ${car.make} ${car.model}`}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 />
@@ -239,7 +407,7 @@ const InventoryLive = () => {
                                                     color: 'var(--color-primary)',
                                                     margin: 0
                                                 }}>
-                                                    ${car.price > 0 ? car.price.toLocaleString() : 'Call'}
+                                                    ${parseFloat(car.retail) > 0 ? parseFloat(car.retail).toLocaleString() : 'Call'}
                                                 </p>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
@@ -258,13 +426,13 @@ const InventoryLive = () => {
                                                     color: 'var(--color-dark)',
                                                     margin: 0
                                                 }}>
-                                                    {car.mileage > 0 ? car.mileage.toLocaleString() : 'N/A'}
+                                                    {parseFloat(car.mileage) > 0 ? parseFloat(car.mileage).toLocaleString() : 'N/A'}
                                                 </p>
                                             </div>
                                         </div>
 
                                         <Link
-                                            to={`/vehicle/${car.stock}`}
+                                            to={`/vehicle/${car.stockNumber}`}
                                             className="btn btn-primary"
                                             style={{
                                                 width: '100%',
@@ -280,12 +448,21 @@ const InventoryLive = () => {
                             )) : (
                                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem' }}>
                                     <h3>No "Freedom Machines" found matching those criteria.</h3>
-                                    <button onClick={() => { setFilter(''); setPriceRange(30000); }} className="btn btn-outline" style={{ marginTop: '1rem' }}>Clear Filters</button>
+                                    <button onClick={() => { setFilter(''); setPriceRange(50000); }} className="btn btn-outline" style={{ marginTop: '1rem' }}>Clear Filters</button>
                                 </div>
                             )}
                         </div>
-                    </div>
-                </section>
+                    )}
+                </div>
+            </section>
+
+            {/* Modal */}
+            {editingVehicle && (
+                <VehicleEditor
+                    vehicle={editingVehicle}
+                    onSave={handleSaveVehicle}
+                    onClose={() => setEditingVehicle(null)}
+                />
             )}
 
             <footer style={{ backgroundColor: '#1e293b', color: 'white', padding: '3rem 0', marginTop: 'auto' }}>
@@ -295,6 +472,19 @@ const InventoryLive = () => {
                         <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Twitter</a>
                         <a href="https://instagram.com" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Instagram</a>
                         <a href="https://youtube.com/playlist?list=PLl7IO3qjXvk6YT6yYeClM1Pn24H0uWGj4&si=fjk0H7RWbmkXIVJL" target="_blank" rel="noreferrer" style={{ color: '#cbd5e1', textDecoration: 'none' }}>YouTube</a>
+                    </div>
+                    {/* Dealer Login - Hidden / Discrete */}
+                    <div style={{ marginTop: '2rem', opacity: 0.3 }}>
+                        {!isAuthenticated ? (
+                            <button
+                                onClick={handleDealerLogin}
+                                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 auto' }}
+                            >
+                                <Lock size={12} /> Dealer Login
+                            </button>
+                        ) : (
+                            <span style={{ fontSize: '0.75rem', color: '#22c55e' }}>● Authenticated as Manager</span>
+                        )}
                     </div>
                 </div>
             </footer>

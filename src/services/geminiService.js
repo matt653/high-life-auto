@@ -2,13 +2,14 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const analyzeVehicle = async (vehicle) => {
-    // Robust API Key retrieval
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || window.process?.env?.API_KEY || "";
+    // Parsing API Key from Vite env
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
     if (!apiKey) {
-        throw new Error("API Key is missing. Please configure it in .env or index.html");
+        throw new Error("API Key is missing. Please configure VITE_GEMINI_API_KEY in .env");
     }
 
+    // Use the google-genai library as intended
     const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `
@@ -48,7 +49,7 @@ export const analyzeVehicle = async (vehicle) => {
 
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-exp",
+            model: "gemini-2.0-flash-exp", // Updated to a known valid model or use gemini-1.5-flash
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],

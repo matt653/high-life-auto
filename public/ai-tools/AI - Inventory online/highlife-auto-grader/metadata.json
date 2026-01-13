@@ -1,0 +1,5 @@
+{
+  "name": "HighLife Auto Grader",
+  "description": "AI-powered vehicle grader that analyzes inventory data and YouTube videos to provide fair value scores and detailed condition reports.",
+  "requestFramePermissions": []
+}

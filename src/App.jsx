@@ -15,6 +15,7 @@ const VehicleDetailLive = lazy(() => import('./pages/VehicleDetailLive'));
 const About = lazy(() => import('./pages/About'));
 const Financing = lazy(() => import('./pages/Financing'));
 const Contact = lazy(() => import('./pages/Contact'));
+const AIToolsDashboard = lazy(() => import('./pages/AIToolsDashboard'));
 
 // Loading Fallback
 const PageLoader = () => (
@@ -41,6 +42,7 @@ function App() {
                   <Route path="/vehicle/:id" element={<VehicleDetailLive />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/lab" element={<AIToolsDashboard />} />
                 </Routes>
               </Suspense>
             </main>
