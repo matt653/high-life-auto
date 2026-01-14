@@ -70,6 +70,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                         <button onClick={onClose} className="ag-btn-cancel">Cancel</button>
                         <button
                             onClick={() => {
+                                alert("DEBUG: Editor Button Clicked. Sending data...");
                                 console.log("Saving formData...", formData);
                                 onSave(formData);
                             }}

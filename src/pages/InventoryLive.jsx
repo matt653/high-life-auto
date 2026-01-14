@@ -257,7 +257,7 @@ const InventoryLive = () => {
     // SAVING NOW WRITES TO FIREBASE (PUBLISH)
     const handleSaveVehicle = async (updatedVehicle) => {
         // Debugging Feedback
-        // alert("Debug: Starting Save Process..."); 
+        alert("DEBUG: Parent received Save Request for VIN: " + updatedVehicle.vin);
 
         if (!updatedVehicle.vin) {
             alert("Error: Cannot save vehicle without VIN");
