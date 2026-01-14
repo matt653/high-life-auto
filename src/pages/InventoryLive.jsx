@@ -256,20 +256,21 @@ const InventoryLive = () => {
 
     // SAVING NOW WRITES TO FIREBASE (PUBLISH)
     const handleSaveVehicle = async (updatedVehicle) => {
+        // Debugging Feedback
+        // alert("Debug: Starting Save Process..."); 
+
         if (!updatedVehicle.vin) {
-            alert("Cannot save vehicle without VIN");
+            alert("Error: Cannot save vehicle without VIN");
             return;
         }
 
         if (!isFirebaseConfigured) {
-            alert("CANNOT SAVE: Firebase API Key is missing in .env file.\nThe app is running in Read-Only mode.");
+            alert("CANNOT SAVE: Firebase API Key is missing. App is in Read-Only Mode.");
             return;
         }
 
         const vin = updatedVehicle.vin.trim().toUpperCase();
 
-        // Extract only the fields we want to enhance/persist
-        // We don't want to save the whole CSV row, just the AI stuff
         const enhancementData = {
             vin: vin,
             aiGrade: updatedVehicle.aiGrade,
@@ -283,11 +284,11 @@ const InventoryLive = () => {
         try {
             console.log("Saving to Firestore:", vin, enhancementData);
             await setDoc(doc(db, 'vehicle_enhancements', vin), enhancementData, { merge: true });
-            setEditingVehicle(null); // Close modal, Firestore listener will update UI
-            // alert("Saved & Published!"); // Optional feedback
+            setEditingVehicle(null);
+            alert("✅ Saved & Published Successfully!");
         } catch (e) {
             console.error("Error saving to Firestore", e);
-            alert("Failed to save changes: " + e.message);
+            alert(`YOUR SAVE FAILED:\n${e.message}\n\nCheck your internet connection or API Keys.`);
         }
     };
 
