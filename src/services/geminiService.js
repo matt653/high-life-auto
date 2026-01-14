@@ -76,6 +76,8 @@ export const analyzeVehicle = async (vehicle) => {
     **TASKS**:
     1. **Analyze Video/Audio**: Extract honest positives and negatives.
     2. **Calculate Grades**: Fill the 7 categories above.
+       - **EXPLAIN DEDUCTIONS**: If grade < 5.0, explicitly state WHY in the reasoning.
+       - Example: "Deducted 0.5 for visible door scratch", "Deducted 1.0 for 210k miles".
     3. **Write Copy**: Generate a 'Marketing Description' for the website.
        - **Reference the video directly**: "In the test drive, Miriam noted..." 
        - Tone: Informative, objective, helpful, and honest. No "hype".

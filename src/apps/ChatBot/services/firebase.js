@@ -3,8 +3,9 @@ import 'firebase/compat/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // NOTE: In a real environment, use import.meta.env for these values.
+// We fallback to Gemini Key for API Key if specific Firebase key is missing, as they are often the same in simple GCP setups.
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "PLACEHOLDER_API_KEY",
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || "PLACEHOLDER_API_KEY",
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "placeholder.firebaseapp.com",
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "placeholder-project",
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "placeholder.appspot.com",
