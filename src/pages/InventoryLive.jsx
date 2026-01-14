@@ -107,22 +107,29 @@ const InventoryLive = () => {
         }
     }, []);
 
+    const [dbStatus, setDbStatus] = useState({ status: 'connecting', count: 0, error: null });
+
     // 1. Firestore Sync (Enhancements)
     // This connects to the database to pull "Grades" and "Descriptions"
     useEffect(() => {
         if (!isFirebaseConfigured) {
             console.warn("Firebase not configured - Enhancements will not save remotely.");
+            setDbStatus({ status: 'error', error: 'Firebase Config Missing' });
             return;
         }
 
         const unsubscribe = onSnapshot(collection(db, 'vehicle_enhancements'), (snapshot) => {
             const data = {};
+            let count = 0;
             snapshot.forEach(doc => {
                 data[doc.id] = doc.data();
+                count++;
             });
             setEnhancements(data);
+            setDbStatus({ status: 'connected', count, error: null });
         }, (error) => {
             console.error("Firestore sync error:", error);
+            setDbStatus({ status: 'error', error: error.message });
         });
 
         return () => unsubscribe();
@@ -352,6 +359,13 @@ const InventoryLive = () => {
                                     >
                                         <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} /> {isSyncing ? 'Syncing...' : 'Sync Feed'}
                                     </button>
+                                    {/* DB Status */}
+                                    <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', fontSize: '0.75rem', gap: '0.5rem', padding: '0.25rem 0.75rem', borderRadius: '999px', backgroundColor: dbStatus.status === 'error' ? '#fee2e2' : '#f0fdf4', border: dbStatus.status === 'error' ? '1px solid #f87171' : '1px solid #bbf7d0' }}>
+                                        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: dbStatus.status === 'connected' ? '#22c55e' : (dbStatus.status === 'error' ? '#ef4444' : '#eab308') }} />
+                                        <span style={{ color: dbStatus.status === 'error' ? '#b91c1c' : '#15803d', fontWeight: 600 }}>
+                                            {dbStatus.status === 'connected' ? `Cloud Active (${dbStatus.count})` : (dbStatus.status === 'error' ? 'Cloud Error' : 'Connecting...')}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
                                     <button onClick={() => setViewMode('public')} className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
