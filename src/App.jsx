@@ -18,6 +18,8 @@ const Contact = lazy(() => import('./pages/Contact'));
 const AIToolsDashboard = lazy(() => import('./pages/AIToolsDashboard'));
 const ChatBotApp = lazy(() => import('./pages/ChatBotApp'));
 
+const StaffPortal = lazy(() => import('./pages/StaffPortal'));
+
 // Loading Fallback
 const PageLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: '#1e3a5f' }}>
@@ -45,6 +47,7 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/lab" element={<AIToolsDashboard />} />
                   <Route path="/apps/chatbot" element={<ChatBotApp />} />
+                  <Route path="/secure-login-8191" element={<StaffPortal />} />
                 </Routes>
               </Suspense>
             </main>

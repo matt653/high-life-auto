@@ -99,6 +99,12 @@ const InventoryLive = () => {
             }
             setLastSyncTime(parsed.lastSyncTime || null);
         }
+
+        // Staff Auth Check
+        if (localStorage.getItem('highlife_staff_auth') === 'true') {
+            setIsAuthenticated(true);
+            setViewMode('manager');
+        }
     }, []);
 
     // 1. Firestore Sync (Enhancements)

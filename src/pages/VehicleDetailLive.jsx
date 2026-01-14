@@ -54,6 +54,88 @@ const parseCSV = (csv) => {
     });
 };
 
+const InteractiveGrader = ({ gradeData }) => {
+    const [userWeights, setUserWeights] = useState({});
+    const [finalScore, setFinalScore] = useState(0);
+
+    useEffect(() => {
+        if (gradeData?.categories) {
+            const initial = {};
+            Object.keys(gradeData.categories).forEach(k => initial[k] = 100);
+            setUserWeights(initial);
+        }
+    }, [gradeData]);
+
+    useEffect(() => {
+        if (!gradeData?.categories) return;
+        let totalWeightedScore = 0;
+        let totalMaxWeight = 0;
+
+        Object.keys(gradeData.categories).forEach(key => {
+            const cat = gradeData.categories[key];
+            const score = cat.score || 0;
+            const weight = userWeights[key] || 0;
+            totalWeightedScore += (score * weight);
+            totalMaxWeight += weight;
+        });
+
+        const s = totalMaxWeight > 0 ? (totalWeightedScore / totalMaxWeight) : 0;
+        setFinalScore(Math.round(s));
+    }, [userWeights, gradeData]);
+
+    const getGradeLetter = (s) => {
+        if (s >= 97) return "A+";
+        if (s >= 93) return "A";
+        if (s >= 90) return "A-";
+        if (s >= 87) return "B+";
+        if (s >= 83) return "B";
+        if (s >= 80) return "B-";
+        if (s >= 77) return "C+";
+        if (s >= 73) return "C";
+        if (s >= 70) return "C-";
+        if (s >= 65) return "D";
+        return "F";
+    };
+
+    if (!gradeData?.categories) return null;
+
+    return (
+        <div style={{ marginTop: '3rem', padding: '2rem', backgroundColor: '#f0f9ff', border: '2px dashed #0ea5e9', borderRadius: '1rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0369a1', margin: 0 }}>TRY IT YOURSELF</h3>
+                <p style={{ color: '#0c4a6e' }}>Don't agree with our priorities? Adjust the sliders to see what this car is worth <strong>to you</strong>.</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {Object.entries(gradeData.categories).map(([key, cat]) => (
+                        <div key={key}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+                                <span style={{ textTransform: 'uppercase' }}>{cat.name || key} (Grade: {cat.grade})</span>
+                                <span style={{ color: '#0ea5e9' }}>{userWeights[key] || 0}% Importance</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={userWeights[key] || 0}
+                                onChange={(e) => setUserWeights(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
+                                style={{ width: '100%', accentColor: '#0ea5e9' }}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', textTransform: 'uppercase', color: '#0c4a6e' }}>Your Personal Grade</div>
+                    <div style={{ fontSize: '5rem', fontWeight: 900, color: '#0ea5e9', lineHeight: 1 }}>{getGradeLetter(finalScore)}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#0284c7', opacity: 0.8 }}>{finalScore}/100</div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const VehicleDetailLive = () => {
     const { id } = useParams(); // 'id' here corresponds to the Stock Number
     const [car, setCar] = useState(null);
@@ -493,6 +575,10 @@ const VehicleDetailLive = () => {
                             </div>
 
                         </div>
+
+                        {/* Interactive Grader Section */}
+                        <InteractiveGrader gradeData={vehicleGrade} />
+
                     </div>
                 </section>
             )}
