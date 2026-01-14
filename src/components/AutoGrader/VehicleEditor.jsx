@@ -88,8 +88,12 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
 
         try {
             // 1. Process Image Locally (WASM)
-            // Note: imgly might need CORS support. If Frazer CDN blocks it, this might fail unless we proxy.
-            const blob = await removeBackground(imageUrl);
+            // Use CDN for assets to avoid local serving issues with Vite/WASM
+            const config = {
+                publicPath: 'https://static.img.ly/background-removal-js/v1.5.5/dist/'
+            };
+
+            const blob = await removeBackground(imageUrl, config);
 
             // 2. Upload to Firebase Storage
             const timestamp = Date.now();
