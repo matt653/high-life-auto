@@ -53,7 +53,7 @@ function App() {
                   <Route path="/apps/edmunds" element={<EdmundsApp />} />
                   <Route path="/apps/bluetooth" element={<BluetoothApp />} />
                   <Route path="/apps/marketplace" element={<MarketplaceApp />} />
-                  <Route path="/secure-login-8191" element={<StaffPortal />} />
+                  <Route path="/login" element={<StaffPortal />} />
                 </Routes>
               </Suspense>
             </main>
@@ -138,7 +138,6 @@ function App() {
                   <div>
                     <a href="#" style={{ marginRight: '1rem' }}>Privacy Policy</a>
                     <a href="#">Terms of Service</a>
-                    <a href="/lab" style={{ marginLeft: '1rem', opacity: 0.5 }}>Staff Login</a>
                   </div>
                 </div>
               </div>
