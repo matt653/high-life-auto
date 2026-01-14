@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // --- HELPERS ---
 
@@ -10,7 +10,7 @@ const getApiKey = () => {
 };
 
 const getClient = () => {
-    return new GoogleGenAI(getApiKey());
+    return new GoogleGenerativeAI(getApiKey());
 };
 
 // --- CHAT ---
