@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, AlertCircle, RefreshCw, Heart, Settings, Shield, Lock } from 'lucide-react';
+import { Search, AlertCircle, RefreshCw, Heart, Settings, Shield, Lock, FileUp } from 'lucide-react';
 
 import { useGarage } from '../context/GarageContext';
 import InventoryTable from '../components/AutoGrader/InventoryTable';
@@ -9,8 +9,9 @@ import { RAW_VEHICLE_CSV } from '../components/AutoGrader/constants';
 import '../components/AutoGrader/AutoGrader.css';
 
 // Firebase Imports
-import { db, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
+import { db, isFirebaseConfigured, storage } from '../apps/ChatBot/services/firebase';
 import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Default CSV URL provided in the original tool
 const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
@@ -97,6 +98,7 @@ const InventoryManager = () => {
     const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
     const [lastSyncTime, setLastSyncTime] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     // --- Advanced Filtering State ---
     const [filter, setFilter] = useState('');
@@ -120,11 +122,10 @@ const InventoryManager = () => {
             setLastSyncTime(parsed.lastSyncTime || null);
         }
 
-        // Staff Auth Check
+        // Staff Auth Check - Session Only
         if (sessionStorage.getItem('highlife_staff_auth') === 'true') {
             setIsAuthenticated(true);
         }
-        // No redirect logic here, simply wait for auth or show lock screen
     }, []);
 
     const [dbStatus, setDbStatus] = useState({ status: 'connecting', count: 0, error: null });
@@ -184,6 +185,41 @@ const InventoryManager = () => {
             setIsSyncing(false);
         }
     }, [googleSheetUrl]);
+
+    // Handle CSV Upload to Firebase
+    const handleCsvUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            // 1. Read locally to validate
+            const text = await file.text();
+            const localParsed = parseCSV(text);
+            if (localParsed.length === 0) throw new Error("File appears empty or invalid CSV.");
+
+            // 2. Upload to Firebase Storage
+            const storageRef = ref(storage, 'inventory/imported_feed.csv');
+            await uploadBytes(storageRef, file);
+            const publicUrl = await getDownloadURL(storageRef);
+
+            console.log("CSV Uploaded to:", publicUrl);
+
+            // 3. Update Sync URL to point to this new cloud file
+            setGoogleSheetUrl(publicUrl);
+            setCsvData(localParsed);
+            setLastSyncTime(new Date().toLocaleString());
+
+            alert(`✅ Success! Imported ${localParsed.length} vehicles from ${file.name}. \n\nSystem will now use this uploaded file as the primary feed.`);
+
+        } catch (error) {
+            console.error("Upload failed:", error);
+            alert(`Upload Failed: ${error.message}`);
+        } finally {
+            setIsUploading(false);
+            event.target.value = null; // Reset input
+        }
+    };
 
     // 3. The Merger
     useEffect(() => {
@@ -363,6 +399,22 @@ const InventoryManager = () => {
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem' }}>
+                                <label
+                                    style={{
+                                        background: '#ea580c', border: 'none', borderRadius: '0.5rem',
+                                        color: 'white', fontWeight: '600', padding: '0.75rem 1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                    }}
+                                >
+                                    <FileUp size={16} /> {isUploading ? 'Uploading...' : 'Import CSV'}
+                                    <input
+                                        type="file"
+                                        accept=".csv"
+                                        onChange={handleCsvUpload}
+                                        style={{ display: 'none' }}
+                                        disabled={isUploading}
+                                    />
+                                </label>
+
                                 <button
                                     onClick={() => performSmartSync(true)}
                                     style={{
