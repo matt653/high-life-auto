@@ -3,9 +3,14 @@ import { analyzeVehicle } from '../../services/geminiService';
 import './AutoGrader.css';
 import { RefreshCw, Play, FileText, CheckCircle, ArrowLeft, ArrowRight, Save, X, Image as ImageIcon, Layout, Box, Trash2 } from 'lucide-react';
 
+import { storage } from '../../apps/ChatBot/services/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { removeBackground } from '@imgly/background-removal';
+
 const VehicleEditor = ({ vehicle, onSave, onClose }) => {
     const [formData, setFormData] = useState({ ...vehicle });
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [processingImageId, setProcessingImageId] = useState(null); // Track which image is being processed
 
     // NEW: Simplied tabs - just Data vs Media
     const [section, setSection] = useState('data'); // 'data', 'media', 'ai'
@@ -72,6 +77,45 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
         const [selected] = newImages.splice(index, 1);
         newImages.unshift(selected);
         setFormData(prev => ({ ...prev, imageUrls: newImages }));
+    };
+
+    const handleRemoveBackground = async (index) => {
+        const imageUrl = formData.imageUrls[index];
+        if (!imageUrl) return;
+
+        setProcessingImageId(index);
+        console.log("Starting background removal for:", imageUrl);
+
+        try {
+            // 1. Process Image Locally (WASM)
+            // Note: imgly might need CORS support. If Frazer CDN blocks it, this might fail unless we proxy.
+            const blob = await removeBackground(imageUrl);
+
+            // 2. Upload to Firebase Storage
+            const timestamp = Date.now();
+            const filename = `bg_removed_${timestamp}.png`;
+            const storagePath = `vehicles/${formData.vin || 'unknown'}/${filename}`;
+            const storageRef = ref(storage, storagePath);
+
+            console.log("Uploading processed image to:", storagePath);
+            await uploadBytes(storageRef, blob);
+
+            // 3. Get Public URL
+            const publicUrl = await getDownloadURL(storageRef);
+            console.log("New Background-Free URL:", publicUrl);
+
+            // 4. Update State
+            const newImages = [...(formData.imageUrls || [])];
+            newImages[index] = publicUrl;
+            setFormData(prev => ({ ...prev, imageUrls: newImages }));
+
+            alert("Background Removed Successfully!");
+        } catch (error) {
+            console.error("Background Removal Failed:", error);
+            alert(`Failed: ${error.message}. \nNote: This tool requires a browser that supports WebAssembly.`);
+        } finally {
+            setProcessingImageId(null);
+        }
     };
 
     return (
@@ -257,11 +301,9 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                         {/* SECTION: MEDIA */}
                         {section === 'media' && (
                             <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                <div style={{ marginBottom: '2rem' }}>
                                     <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Photo Lab</h2>
-                                    <a href="https://www.remove.bg/upload" target="_blank" rel="noreferrer" className="btn" style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', textDecoration: 'none' }}>
-                                        Open BG Remover Tool ↗
-                                    </a>
+                                    <p style={{ color: '#6b7280' }}>Enhance vehicle imagery. Use "Magic Erase" to remove backgrounds (requires upload).</p>
                                 </div>
 
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
@@ -279,11 +321,23 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                             <div style={{
                                                 position: 'absolute', top: 0, left: 0, right: 0,
                                                 padding: '0.25rem', backgroundColor: 'rgba(0,0,0,0.6)',
-                                                color: 'white', fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between'
+                                                color: 'white', fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', zIndex: 10
                                             }}>
                                                 <span>Pos: {index + 1}</span>
                                                 {index === 0 && <span style={{ color: '#93c5fd', fontWeight: 'bold' }}>MAIN PHOTO</span>}
                                             </div>
+
+                                            {/* Loader Overlay */}
+                                            {processingImageId === index && (
+                                                <div style={{
+                                                    position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.9)',
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                                    zIndex: 20
+                                                }}>
+                                                    <RefreshCw className="animate-spin" size={32} color="#2563eb" />
+                                                    <span style={{ marginTop: '0.5rem', fontWeight: 600, color: '#2563eb' }}>Processing...</span>
+                                                </div>
+                                            )}
 
                                             <div style={{ height: '180px', backgroundColor: '#eee' }}>
                                                 <img src={url} alt={`img-${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -304,6 +358,19 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                 }} style={{ padding: '0.5rem', border: '1px solid #fee2e2', borderRadius: '4px', cursor: 'pointer', background: '#fef2f2', color: '#dc2626' }} title="Delete Photo">
                                                     <Trash2 size={16} />
                                                 </button>
+
+                                                <button
+                                                    onClick={() => handleRemoveBackground(index)}
+                                                    style={{
+                                                        gridColumn: 'span 3', padding: '0.5rem',
+                                                        background: 'linear-gradient(to right, #4f46e5, #06b6d4)',
+                                                        color: 'white', border: 'none', borderRadius: '4px',
+                                                        fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                                                    }}
+                                                >
+                                                    ✨ Magic Erase BG
+                                                </button>
+
                                                 <button onClick={() => makePrimary(index)} disabled={index === 0} style={{ gridColumn: 'span 3', padding: '0.5rem', backgroundColor: index === 0 ? '#f3f4f6' : '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: index === 0 ? 'default' : 'pointer' }}>
                                                     {index === 0 ? 'Primary Photo' : 'Make Primary'}
                                                 </button>

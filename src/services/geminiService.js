@@ -1,5 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const analyzeVehicle = async (vehicle) => {
     // Parsing API Key from Vite env
@@ -9,8 +9,9 @@ export const analyzeVehicle = async (vehicle) => {
         throw new Error("API Key is missing. Please configure VITE_GEMINI_API_KEY in .env");
     }
 
-    // Use the google-genai library as intended
-    const ai = new GoogleGenAI({ apiKey });
+    // Use the reliable google-generative-ai library
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // --- Dynamic Weight Calculation for Prompt ---
     const price = parseFloat(vehicle.retail || 0);
@@ -107,91 +108,49 @@ export const analyzeVehicle = async (vehicle) => {
     Return a JSON object containing the 'grade' object, a 'marketingDescription' string, and a 'blemishes' array.
   `;
 
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-exp",
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        marketingDescription: { type: "STRING" },
-                        blemishes: {
-                            type: "ARRAY",
-                            items: { type: "STRING" }
-                        },
-                        grade: {
-                            type: "OBJECT",
-                            properties: {
-                                overallScore: { type: "NUMBER" }, // 0.0 to 5.0
-                                overallGrade: { type: "STRING" }, // A+, A, etc.
-                                summary: { type: "STRING" },
-                                categories: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        body_condition: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        },
-                                        reliability: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        },
-                                        age_demand: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        },
-                                        minor_mechanical: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        },
-                                        miles: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        },
-                                        title_history: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        },
-                                        value: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        }
-                                    },
-                                    required: ["body_condition", "reliability", "age_demand", "minor_mechanical", "miles", "title_history", "value"]
-                                }
-                            },
-                            required: ["overallScore", "overallGrade", "summary", "categories"]
-                        }
+    const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        // tools: [{ googleSearch: {} }], // Temporarily disabled to ensure stability with basic model
+        generationConfig: {
+            temperature: 0.2,
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: "OBJECT",
+                properties: {
+                    marketingDescription: { type: "STRING" },
+                    blemishes: {
+                        type: "ARRAY",
+                        items: { type: "STRING" },
                     },
-                    required: ["marketingDescription", "grade", "blemishes"]
-                }
-            }
-        });
+                    grade: {
+                        type: "OBJECT",
+                        properties: {
+                            overallScore: { type: "NUMBER" },
+                            overallGrade: { type: "STRING" },
+                            summary: { type: "STRING" },
+                            categories: {
+                                type: "OBJECT",
+                                properties: {
+                                    body_condition: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                    reliability: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                    age_demand: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                    minor_mechanical: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                    miles: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                    title_history: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                    value: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                },
+                                required: ["body_condition", "reliability", "age_demand", "minor_mechanical", "miles", "title_history", "value"]
+                            },
+                        },
+                        required: ["overallScore", "overallGrade", "summary", "categories"]
+                    },
+                },
+                required: ["marketingDescription", "grade", "blemishes"]
+            },
+        },
+    });
 
-        if (response.text) {
-            const result = JSON.parse(response.text);
-
-            // Extract grounding sources from metadata
-            const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-            const sources = groundingChunks
-                .map((chunk) => chunk.web)
-                .filter((web) => web && web.uri && web.title)
-                .map((web) => ({
-                    uri: web.uri,
-                    title: web.title
-                }));
-
-            return {
-                ...result,
-                groundingSources: sources
-            };
-        }
-        throw new Error("No response text generated");
-    } catch (error) {
-        console.error("AI Analysis failed:", error);
-        throw error;
-    }
+    const response = await result.response;
+    const text = response.text().replace(/```json|```/g, '').trim();
+    return JSON.parse(text);
 };

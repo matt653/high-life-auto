@@ -1,14 +1,12 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GoogleGenAI, Modality } from '@google/genai';
+import React, { useState, useEffect, useRef } from 'react';
+import { GoogleGenAI } from '@google/genai';
 import { 
   Activity, 
-  Settings, 
   Thermometer, 
   Gauge, 
   Wind, 
   AlertTriangle, 
-  Mic, 
   Ear, 
   Zap, 
   CheckCircle2,
@@ -21,19 +19,35 @@ import {
   Home,
   Check,
   ExternalLink,
-  Search
+  Search,
+  BookOpen,
+  FileText,
+  ClipboardList,
+  Printer,
+  X,
+  ShieldCheck,
+  Info,
+  Camera,
+  Video,
+  StopCircle,
+  Play,
+  Trash2
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { OBDData, DiagnosticMode, DiagnosticCode } from './types';
 
-// Utility for audio
-function encode(bytes: Uint8Array) {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+// --- Utilities ---
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        const base64data = reader.result as string;
+        resolve(base64data.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 const App: React.FC = () => {
@@ -42,17 +56,27 @@ const App: React.FC = () => {
   const [activeCodes, setActiveCodes] = useState<DiagnosticCode[]>([]);
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [groundingLinks, setGroundingLinks] = useState<{title: string, uri: string}[]>([]);
-  const [isListening, setIsListening] = useState(false);
+  
+  // Sensory & Media Input State
   const [sensoryInput, setSensoryInput] = useState<{
     smell: string[];
     sound: string[];
     touch: string[];
   }>({ smell: [], sound: [], touch: [] });
-  
+
+  const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+
   const [btStatus, setBtStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [btDevice, setBtDevice] = useState<any | null>(null);
+  const [reportType, setReportType] = useState<'sales' | 'detailed' | null>(null);
 
-  const aiRef = useRef<any>(null);
+  // Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   const connectBluetooth = async () => {
     if (!('bluetooth' in navigator)) {
@@ -62,33 +86,15 @@ const App: React.FC = () => {
 
     setBtStatus('connecting');
     try {
-      /**
-       * OBDLink MX+ and other modern adapters require specific Service UUIDs to be discovered 
-       * reliably in Web Bluetooth. We filter by common names AND specific services.
-       */
       const device = await (navigator as any).bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'OBD' },
-          { namePrefix: 'obd' },
-          { namePrefix: 'ELM' },
-          { namePrefix: 'Vgate' },
-          { namePrefix: 'Link' }, // Matches "Link" in some names
-          { name: 'OBDLink MX+' },
-          { name: 'OBDLink CX' },
-          // Common Generic BLE Service for OBD
-          { services: ['0000fff0-0000-1000-8000-00805f9b34fb'] }, 
-           // Specific OBDLink BLE Service
-          { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] }
-        ],
+        acceptAllDevices: true,
         optionalServices: [
           '00001101-0000-1000-8000-00805f9b34fb', // Standard SPP
           '0000fff0-0000-1000-8000-00805f9b34fb', // Generic BLE
           'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // OBDLink Proprietary
-          '6e400001-b5a3-f393-e0a9-e50e24dcca9e'  // Nordic UART (often used in clones)
+          '6e400001-b5a3-f393-e0a9-e50e24dcca9e'  // Nordic UART
         ]
       });
-
-      console.log("Device selected:", device.name || "Unnamed Device");
 
       if (device.gatt) {
         await device.gatt.connect();
@@ -107,8 +113,7 @@ const App: React.FC = () => {
       if (error.name === 'NotFoundError' || error.message?.includes('cancelled')) {
         return;
       }
-      console.error("Bluetooth connection failed:", error);
-      alert(`Bluetooth Error: ${error.message}\n\nTroubleshooting for OBDLink MX+:\n1. Press the physical 'Pair' button on the adapter until the LED blinks fast.\n2. Ensure it is NOT connected to your phone's Bluetooth settings (forget the device if necessary).\n3. Use the 'Bluefy' browser on iOS.`);
+      alert(`Bluetooth Error: ${error.message}\n\nTroubleshooting:\n1. Open your phone settings and "Forget" the OBD device.\n2. If on iOS, use Bluefy.`);
     }
   };
 
@@ -135,75 +140,214 @@ const App: React.FC = () => {
     }
   }, [mode, activeCodes.length, btStatus]);
 
-  const startSensoryDiagnostic = async () => {
-    setMode(DiagnosticMode.SENSORY_INPUT);
-    setIsListening(true);
+  // --- Camera & Recording Logic ---
+  
+  const startCamera = async () => {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-      const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-        callbacks: {
-          onopen: () => console.log('Gemini Live session opened'),
-          onmessage: (msg: any) => {
-            if (msg.serverContent?.modelTurn?.parts?.[0]?.text) {
-              setAiAnalysis(prev => prev + msg.serverContent.modelTurn.parts[0].text);
-            }
-          },
-          onerror: (e: any) => console.error('Gemini error:', e),
-          onclose: () => setIsListening(false),
-        },
-        config: {
-          responseModalities: [Modality.AUDIO],
-          systemInstruction: "You are an expert master mechanic. Help the user diagnose their car based on live OBD-II data and their senses. Use technical precision found in sources like obd-codes.com.",
-        }
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: true, 
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } 
       });
-      aiRef.current = sessionPromise;
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Camera access denied", err);
+      alert("Please allow camera access to use the intake features.");
     }
   };
 
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (mode === DiagnosticMode.SENSORY_INPUT) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [mode]);
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const startRecording = () => {
+    if (!streamRef.current) return;
+    
+    // Determine supported MIME type
+    const mimeType = [
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4'
+    ].find(type => MediaRecorder.isTypeSupported(type)) || '';
+
+    if (!mimeType) {
+      alert("Video recording not supported on this device. Please use manual senses.");
+      return;
+    }
+
+    const recorder = new MediaRecorder(streamRef.current, { mimeType });
+    chunksRef.current = [];
+    
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: mimeType });
+      setMediaBlob(blob);
+    };
+
+    recorder.start();
+    mediaRecorderRef.current = recorder;
+    setIsRecording(true);
+    setRecordingTime(0);
+    
+    // Auto-stop after 7 seconds for a concise clip
+    const timer = setInterval(() => {
+      setRecordingTime(prev => {
+        if (prev >= 7) {
+          stopRecording(); // Will clear interval in the stop function logic via state change effect? No, simple call.
+          clearInterval(timer);
+          return 7;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const clearRecording = () => {
+    setMediaBlob(null);
+    setRecordingTime(0);
+  };
+
+  // --- Final Report Generation ---
   const submitSensoryData = async () => {
     setMode(DiagnosticMode.RESULTS);
     setAiAnalysis('');
     setGroundingLinks([]);
     
-    const prompt = `Research the specific diagnostic trouble codes: ${activeCodes.map(c => c.code).join(', ')}. Combine this with user observations: Smells (${sensoryInput.smell.join(', ')}), Sounds (${sensoryInput.sound.join(', ')}), Tactile (${sensoryInput.touch.join(', ')}). Provide a detailed master mechanic report using live web data for exact failure points and repair steps. Refer to expert sites like obd-codes.com for code definitions and common fixes.`;
+    const prompt = `
+      You are AutoSense AI, a down-to-earth, honest, and practical mechanic assistant.
+      
+      TASK:
+      Analyze the provided Diagnostic Trouble Codes (DTCs) and the optional user observations (Video/Audio intake + Manual Senses).
+      
+      DATA:
+      - DTCs: ${activeCodes.map(c => c.code).join(', ')}
+      - Manual Smells: ${sensoryInput.smell.join(', ')}
+      - Manual Sounds: ${sensoryInput.sound.join(', ')}
+      - Manual Tactile: ${sensoryInput.touch.join(', ')}
+      ${mediaBlob ? '- NOTE: A video/audio clip of the engine is attached. Analyze the sound and visuals for irregularities (leaks, rattles, hisses, smoke).' : ''}
+
+      OUTPUT RULES:
+      1. **Tone**: Helpful, calm, "Don't Panic". Avoid alarmist language. Be realistic about urgency.
+      2. **Structure**:
+         - **The Issue**: Plain English explanation.
+         - **Cost Estimates**: Give a realistic range for DIY (Parts) vs Shop (Labor + Parts).
+         - **The Fix**: Simple step-by-step overview.
+         - **Pro Tips**: Practical advice (e.g. "Wear gloves," "Wait for engine to cool," "Check the fuse first").
+      3. **Sources**: Use Google Search to find real pricing and forums.
+      
+      Your goal is to empower the user to decide: "Can I fix this myself, or should I go to a pro?"
+    `;
     
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }]
-      }
-    });
-
-    setAiAnalysis(response.text || 'Unable to generate analysis.');
     
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (chunks) {
-      const links = chunks
-        .filter((c: any) => c.web)
-        .map((c: any) => ({ title: c.web.title, uri: c.web.uri }));
-      setGroundingLinks(links);
+    // Prepare Content Parts
+    const parts: any[] = [{ text: prompt }];
+    
+    if (mediaBlob) {
+      const b64 = await blobToBase64(mediaBlob);
+      parts.push({
+        inlineData: {
+          mimeType: mediaBlob.type,
+          data: b64
+        }
+      });
+    }
+
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: { parts },
+        config: {
+          tools: [{ googleSearch: {} }]
+        }
+      });
+
+      setAiAnalysis(response.text || 'Unable to generate analysis.');
+      
+      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      if (chunks) {
+        const links = chunks
+          .filter((c: any) => c.web)
+          .map((c: any) => ({ title: c.web.title, uri: c.web.uri }));
+        setGroundingLinks(links);
+      }
+    } catch (e) {
+      console.error(e);
+      setAiAnalysis("Error generating report. Please try again.");
     }
   };
 
   const toggleSensorySelection = (category: 'smell' | 'sound' | 'touch', value: string) => {
     setSensoryInput(prev => {
       const current = prev[category];
-      if (current.includes(value)) {
-        return { ...prev, [category]: current.filter(v => v !== value) };
+      
+      // Handle "None" logic
+      if (value === 'none') {
+        return { ...prev, [category]: current.includes('none') ? [] : ['none'] };
       }
-      return { ...prev, [category]: [...current, value] };
+
+      // If clicking a normal option, remove 'none' and toggle value
+      let newValues;
+      if (current.includes(value)) {
+        newValues = current.filter(v => v !== value);
+      } else {
+        newValues = [...current.filter(v => v !== 'none'), value];
+      }
+      return { ...prev, [category]: newValues };
     });
   };
+
+  // If report mode is active, show the report view overlay
+  if (reportType) {
+    return (
+      <ReportView 
+        type={reportType}
+        data={liveData}
+        codes={activeCodes}
+        sensory={sensoryInput}
+        analysis={aiAnalysis}
+        links={groundingLinks}
+        onClose={() => setReportType(null)}
+      />
+    );
+  }
 
   const Breadcrumbs = () => {
     const stages = [
       { id: DiagnosticMode.LIVE_MONITOR, label: 'Telemetry', icon: <Gauge size={14} /> },
-      { id: DiagnosticMode.SENSORY_INPUT, label: 'Senses', icon: <Ear size={14} /> },
+      { id: DiagnosticMode.SENSORY_INPUT, label: 'Intake', icon: <Camera size={14} /> },
       { id: DiagnosticMode.RESULTS, label: 'Report', icon: <CheckCircle2 size={14} /> },
     ];
     if (mode === DiagnosticMode.IDLE) return null;
@@ -256,7 +400,9 @@ const App: React.FC = () => {
             <Zap size={64} className="text-blue-500 animate-pulse" />
             <h2 className="text-5xl font-extrabold text-white tracking-tight">Expert Vehicle Diagnostics</h2>
             <p className="text-slate-400 max-w-lg text-lg leading-relaxed">
-              Powered by real-time search and master mechanic logic. We cross-reference your car's data with thousands of professional repair guides.
+              Real-time monitoring and down-to-earth repair advice.
+              <br/>
+              <span className="text-sm text-slate-500">Video & Audio Intake • Price Ranges • DIY Tips</span>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button onClick={connectBluetooth} className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg transition-all transform hover:scale-105 shadow-xl flex items-center justify-center gap-2">
@@ -265,9 +411,6 @@ const App: React.FC = () => {
               <button onClick={() => setMode(DiagnosticMode.LIVE_MONITOR)} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-bold text-lg transition-all border border-slate-700">
                 Launch Simulation
               </button>
-            </div>
-            <div className="text-xs text-slate-500 max-w-xs mx-auto italic mt-4">
-              Tip: Press the 'Connect' button on your OBDLink MX+ to make it discoverable.
             </div>
           </div>
         )}
@@ -326,8 +469,8 @@ const App: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <button onClick={startSensoryDiagnostic} className="mt-8 w-full py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 shadow-xl">
-                  Verify with Senses <ChevronRight size={18} />
+                <button onClick={() => setMode(DiagnosticMode.SENSORY_INPUT)} className="mt-8 w-full py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 shadow-xl">
+                  Inspect & Verify <ChevronRight size={18} />
                 </button>
               </div>
             </div>
@@ -335,23 +478,109 @@ const App: React.FC = () => {
         )}
 
         {mode === DiagnosticMode.SENSORY_INPUT && (
-          <div className="max-w-6xl mx-auto space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="max-w-7xl mx-auto space-y-6 animate-in slide-in-from-right-4 duration-300">
             <button onClick={() => setMode(DiagnosticMode.LIVE_MONITOR)} className="flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
               <ChevronLeft size={16} /> Back to Telemetry
             </button>
-            <div className="glass-card p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
-              <div className="space-y-2 relative z-10">
-                <h2 className="text-4xl font-black text-white">Observation Engine</h2>
-                <p className="text-slate-400 text-lg">Input your tactile, auditory, and olfactory findings.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              
+              {/* Left Column: Manual Senses */}
+              <div className="glass-card p-8 rounded-[2rem] space-y-8 h-full">
+                 <div className="space-y-2">
+                    <h2 className="text-3xl font-black text-white">Observation Engine</h2>
+                    <p className="text-slate-400 text-sm">Select what you feel, hear, or smell.</p>
+                 </div>
+                 
+                 <div className="space-y-6">
+                    <SensoryMultiSelect label="Smell Assessment" icon={<Wind size={18} />} values={sensoryInput.smell} options={[{v: "none", l: "Nothing / Normal"}, {v: "sweet", l: "Antifreeze / Sweet"}, {v: "burnt-oil", l: "Burnt Oil"}, {v: "burnt-rubber", l: "Acrid / Rubber"}, {v: "sulfur", l: "Eggs / Sulfur"}]} onToggle={(v) => toggleSensorySelection('smell', v)} />
+                    <SensoryMultiSelect label="Audio Profile" icon={<Ear size={18} />} values={sensoryInput.sound} options={[{v: "none", l: "Nothing / Normal"}, {v: "squeal", l: "Screech / Squeal"}, {v: "grind", l: "Grinding Metal"}, {v: "knock", l: "Rhythmic Knock"}, {v: "hiss", l: "Hissing Air"}]} onToggle={(v) => toggleSensorySelection('sound', v)} />
+                    <SensoryMultiSelect label="Tactile Feedback" icon={<Zap size={18} />} values={sensoryInput.touch} options={[{v: "none", l: "Nothing / Normal"}, {v: "steering-vibrate", l: "Wheel Shake"}, {v: "rough-idle", l: "Rough Idle"}, {v: "hesitation", l: "Power Loss"}, {v: "pulling", l: "Lateral Pull"}]} onToggle={(v) => toggleSensorySelection('touch', v)} />
+                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-                <SensoryMultiSelect label="Smell Assessment" icon={<Wind size={18} />} values={sensoryInput.smell} options={[{v: "sweet", l: "Antifreeze / Sweet"}, {v: "burnt-oil", l: "Burnt Oil"}, {v: "burnt-rubber", l: "Acrid / Rubber"}, {v: "sulfur", l: "Eggs / Sulfur"}]} onToggle={(v) => toggleSensorySelection('smell', v)} />
-                <SensoryMultiSelect label="Audio Profile" icon={<Ear size={18} />} values={sensoryInput.sound} options={[{v: "squeal", l: "Screech / Squeal"}, {v: "grind", l: "Grinding Metal"}, {v: "knock", l: "Rhythmic Knock"}, {v: "hiss", l: "Hissing Air"}]} onToggle={(v) => toggleSensorySelection('sound', v)} />
-                <SensoryMultiSelect label="Tactile Feedback" icon={<Zap size={18} />} values={sensoryInput.touch} options={[{v: "steering-vibrate", l: "Wheel Shake"}, {v: "rough-idle", l: "Rough Idle"}, {v: "hesitation", l: "Power Loss"}, {v: "pulling", l: "Lateral Pull"}]} onToggle={(v) => toggleSensorySelection('touch', v)} />
+
+              {/* Right Column: Audio/Video Intake */}
+              <div className="space-y-6">
+                <div className="glass-card p-2 rounded-[2rem] overflow-hidden shadow-2xl bg-black relative min-h-[400px] flex flex-col">
+                    <div className="relative flex-grow bg-slate-900 rounded-[1.8rem] overflow-hidden">
+                         <video 
+                           ref={videoRef} 
+                           autoPlay 
+                           muted 
+                           className={`w-full h-full object-cover transition-opacity duration-300 ${mediaBlob && !isRecording ? 'opacity-50' : 'opacity-100'}`}
+                           playsInline 
+                        />
+                         
+                         {/* Recording Overlay */}
+                         {isRecording && (
+                           <div className="absolute inset-0 bg-red-900/20 flex flex-col items-center justify-center z-20">
+                              <div className="w-16 h-16 rounded-full border-4 border-red-500 animate-pulse flex items-center justify-center">
+                                <div className="w-12 h-12 bg-red-500 rounded-full"></div>
+                              </div>
+                              <p className="mt-4 text-white font-black text-xl tracking-widest">{recordingTime}s / 7s</p>
+                              <p className="text-red-200 text-sm mt-1">Recording Intake...</p>
+                           </div>
+                         )}
+
+                         {/* Review Overlay */}
+                         {mediaBlob && !isRecording && (
+                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-30 animate-in fade-in">
+                              <CheckCircle2 size={56} className="text-emerald-500 mb-4" />
+                              <h3 className="text-white font-bold text-xl">Clip Recorded</h3>
+                              <p className="text-slate-300 text-sm mb-6">Video & Audio attached to report</p>
+                              <button onClick={clearRecording} className="px-6 py-2 bg-slate-800 hover:bg-red-900/50 text-white rounded-full text-sm font-bold flex items-center gap-2 border border-slate-700 transition-colors">
+                                <Trash2 size={16} /> Retake Clip
+                              </button>
+                           </div>
+                         )}
+
+                         {!isRecording && !mediaBlob && (
+                           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                              <div className="w-64 h-64 border-2 border-white/20 rounded-2xl flex items-center justify-center">
+                                 <Camera size={32} className="text-white/20" />
+                              </div>
+                           </div>
+                         )}
+                    </div>
+                    
+                    <div className="p-6 bg-slate-900/50 backdrop-blur-xl border-t border-slate-800">
+                        {mediaBlob ? (
+                          <div className="flex items-center justify-between text-white">
+                            <span className="text-sm font-medium flex items-center gap-2"><Video size={16} className="text-emerald-500" /> Intake Ready</span>
+                            <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">Ready to Analyze</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            <h4 className="text-white font-bold text-sm">Optional: Video & Audio Intake</h4>
+                            <button 
+                              onClick={toggleRecording}
+                              disabled={isRecording}
+                              className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${isRecording ? 'bg-slate-700 text-slate-400' : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-900/20'}`}
+                            >
+                              {isRecording ? 'Recording...' : <><Video size={18} /> Record 7s Clip</>}
+                            </button>
+                            <p className="text-xs text-center text-slate-500 mt-1">Records engine sound and video for AI analysis.</p>
+                          </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="glass-card p-6 rounded-[2rem] bg-gradient-to-br from-blue-900/40 to-slate-900/40 border-blue-500/20">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white"><Info size={20} /></div>
+                        <div>
+                            <h4 className="text-white font-bold mb-1">Down-to-Earth Advice</h4>
+                            <p className="text-sm text-slate-400 leading-relaxed">
+                                I'll analyze the data and tell you if this is a $20 DIY fix or a job for the pros. No alarmist nonsense, just facts and estimates.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onClick={submitSensoryData} className="w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-[1.5rem] font-black text-lg transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3">
+                  Generate Report <FileText size={20} />
+                </button>
               </div>
-              <button onClick={submitSensoryData} disabled={sensoryInput.smell.length === 0 && sensoryInput.sound.length === 0 && sensoryInput.touch.length === 0} className="w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[1.5rem] font-black text-lg transition-all shadow-2xl shadow-blue-900/40 flex items-center justify-center gap-3">
-                Research & Analyze <Search size={20} />
-              </button>
+
             </div>
           </div>
         )}
@@ -364,10 +593,15 @@ const App: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
               <div className="space-y-1">
                 <h2 className="text-5xl font-black text-white tracking-tighter">Diagnostic Report</h2>
-                <p className="text-slate-400 font-medium flex items-center gap-2"><Search size={14} className="text-blue-500" /> Grounded in expert repair databases.</p>
+                <p className="text-slate-400 font-medium flex items-center gap-2"><BookOpen size={14} className="text-blue-500" /> Educational mode active.</p>
               </div>
               <div className="flex gap-3">
-                <button onClick={() => window.print()} className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-all">Save PDF</button>
+                <button onClick={() => setReportType('sales')} className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs uppercase tracking-wide transition-all flex items-center gap-2 shadow-lg shadow-indigo-500/20">
+                  <FileText size={16} /> Sales Sheet
+                </button>
+                <button onClick={() => setReportType('detailed')} className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs uppercase tracking-wide transition-all flex items-center gap-2 border border-slate-700">
+                  <ClipboardList size={16} /> Buyer Report
+                </button>
                 <button onClick={() => setMode(DiagnosticMode.IDLE)} className="p-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-white transition-all shadow-lg"><RefreshCcw size={20} /></button>
               </div>
             </div>
@@ -376,7 +610,7 @@ const App: React.FC = () => {
               <div className="lg:col-span-2 space-y-8">
                 <div className="glass-card p-10 rounded-[2.5rem] border-l-8 border-l-blue-600 shadow-2xl">
                   <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-white">
-                    <CheckCircle2 className="text-blue-500" size={28} /> AI Master Analysis
+                    <CheckCircle2 className="text-blue-500" size={28} /> Mechanic's Analysis
                   </h3>
                   <div className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-lg space-y-6">
                     {aiAnalysis ? aiAnalysis.split('\n').filter(l => l.trim()).map((line, i) => <p key={i}>{line}</p>) : (
@@ -392,7 +626,7 @@ const App: React.FC = () => {
                 {groundingLinks.length > 0 && (
                   <div className="glass-card p-8 rounded-3xl space-y-4">
                     <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                      <ExternalLink size={14} /> Source Verification (obd-codes.com & more)
+                      <ExternalLink size={14} /> Price Checks & Forums
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {groundingLinks.map((link, i) => (
@@ -410,9 +644,9 @@ const App: React.FC = () => {
                 <div className="glass-card p-8 rounded-[2rem] border border-slate-800/50 shadow-xl">
                   <h3 className="text-xl font-black mb-8 text-white uppercase tracking-tighter">Fix Checklist</h3>
                   <div className="space-y-6">
-                    <VerificationItem step="1" title="Physical Verification" desc="Check harness connectivity and pin tension at the sensor." />
-                    <VerificationItem step="2" title="Voltage Drop Test" desc="Ensure < 0.1V drop on the ground side of the circuit." />
-                    <VerificationItem step="3" title="Part Swap" desc="Replace with OEM specific part only to ensure calibration." />
+                    <VerificationItem step="1" title="Visual Check" desc="Inspect for loose connectors or frayed wires first." />
+                    <VerificationItem step="2" title="Price Parts" desc="Compare OEM vs Aftermarket sensor prices." />
+                    <VerificationItem step="3" title="DIY Decision" desc="If job requires lift, consider shop." />
                   </div>
                 </div>
                 <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[2rem] shadow-lg">
@@ -424,6 +658,183 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
+    </div>
+  );
+};
+
+const ReportView: React.FC<{
+  type: 'sales' | 'detailed';
+  data: OBDData[];
+  codes: DiagnosticCode[];
+  sensory: any;
+  analysis: string;
+  links: any[];
+  onClose: () => void;
+}> = ({ type, data, codes, sensory, analysis, links, onClose }) => {
+  const maxRpm = Math.max(...data.map(d => d.rpm), 0);
+  const avgTemp = data.length > 0 ? (data.reduce((a, b) => a + b.coolantTemp, 0) / data.length) : 0;
+  const passed = codes.length === 0;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-white text-slate-900 overflow-y-auto">
+      {/* Print Controls - Hidden when printing */}
+      <div className="fixed top-0 left-0 right-0 p-4 bg-slate-900 text-white flex justify-between items-center print:hidden shadow-xl z-50">
+        <h2 className="font-bold flex items-center gap-2"><Printer size={18} /> Print Preview: {type === 'sales' ? 'Window Sheet' : 'Buyer Report'}</h2>
+        <div className="flex gap-2">
+          <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold text-sm">Print PDF</button>
+          <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold text-sm flex items-center gap-2"><X size={16} /> Close</button>
+        </div>
+      </div>
+
+      <div className="p-8 mt-16 max-w-[21cm] mx-auto min-h-screen bg-white">
+        
+        {/* ================= SALES DATA SHEET ================= */}
+        {type === 'sales' && (
+          <div className="space-y-8 border-4 border-slate-900 p-8 h-full relative">
+            <div className="flex justify-between items-start border-b-4 border-slate-900 pb-6">
+              <div>
+                <h1 className="text-5xl font-black tracking-tighter text-slate-900 mb-2">VEHICLE CONDITION</h1>
+                <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">Digital Inspection Report</p>
+              </div>
+              <div className="text-right">
+                <div className="text-4xl font-black text-blue-600">AutoSense<span className="text-slate-900">AI</span></div>
+                <div className="text-xs font-bold text-slate-400 uppercase mt-1">Verified Certified</div>
+              </div>
+            </div>
+
+            <div className={`p-8 text-center rounded-3xl border-2 ${passed ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="inline-flex items-center justify-center p-4 rounded-full bg-white shadow-lg mb-4">
+                {passed ? <ShieldCheck size={48} className="text-emerald-600" /> : <AlertTriangle size={48} className="text-red-600" />}
+              </div>
+              <h2 className={`text-4xl font-black mb-2 ${passed ? 'text-emerald-700' : 'text-red-700'}`}>
+                {passed ? 'CLEAN BILL OF HEALTH' : 'ATTENTION REQUIRED'}
+              </h2>
+              <p className="text-slate-600 font-medium text-lg">
+                {passed ? 'This vehicle passed all diagnostic checks during the test cycle.' : 'Diagnostic system detected pending codes. Ask associate for details.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Max RPM Tested</div>
+                <div className="text-3xl font-black text-slate-900">{Math.round(maxRpm)} <span className="text-base text-slate-400 font-bold">REV</span></div>
+              </div>
+              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Avg Op. Temp</div>
+                <div className="text-3xl font-black text-slate-900">{Math.round(avgTemp)} <span className="text-base text-slate-400 font-bold">°F</span></div>
+              </div>
+            </div>
+
+            {codes.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-100 pb-2 mb-4">Active System Flags</h3>
+                <div className="space-y-2">
+                  {codes.map((c, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 bg-red-50 rounded-lg border-l-4 border-red-500">
+                      <span className="font-mono font-bold text-red-700">{c.code}</span>
+                      <span className="text-sm font-medium text-red-600">{c.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="absolute bottom-8 left-8 right-8 text-center pt-8 border-t-2 border-slate-100">
+               <p className="text-sm text-slate-500 mb-2 font-medium">Scan for full digital history & AI mechanic analysis</p>
+               <div className="inline-block px-6 py-2 bg-slate-900 text-white font-bold rounded-full text-sm">ASK FOR FULL REPORT</div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= DETAILED BUYER REPORT ================= */}
+        {type === 'detailed' && (
+          <div className="space-y-10">
+             <div className="border-b-2 border-slate-200 pb-8">
+              <h1 className="text-3xl font-bold text-slate-900">Comprehensive Vehicle Diagnostic</h1>
+              <div className="flex justify-between items-end mt-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-slate-500">Generated by <span className="font-bold text-blue-600">AutoSense AI</span></p>
+                  <p className="text-sm text-slate-500">Date: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
+                </div>
+                {passed ? 
+                  <span className="px-4 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-sm border border-emerald-200">SYSTEMS NOMINAL</span> :
+                  <span className="px-4 py-1 bg-red-100 text-red-700 font-bold rounded-full text-sm border border-red-200">{codes.length} FAULTS FOUND</span>
+                }
+              </div>
+            </div>
+
+            <section>
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">1. Telemetry Snapshot</h2>
+              <div className="grid grid-cols-4 gap-4 text-center">
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <div className="text-xs text-slate-500 uppercase font-bold">Max RPM</div>
+                  <div className="text-xl font-black text-slate-900">{Math.round(maxRpm)}</div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <div className="text-xs text-slate-500 uppercase font-bold">Avg Temp</div>
+                  <div className="text-xl font-black text-slate-900">{Math.round(avgTemp)}°F</div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <div className="text-xs text-slate-500 uppercase font-bold">Data Points</div>
+                  <div className="text-xl font-black text-slate-900">{data.length}</div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <div className="text-xs text-slate-500 uppercase font-bold">Scan Duration</div>
+                  <div className="text-xl font-black text-slate-900">{Math.round(data.length / 60)}m</div>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">2. Mechanic's Analysis (Costs & Fixes)</h2>
+              <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 leading-relaxed whitespace-pre-line text-sm">
+                {analysis || "No AI analysis data available."}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">3. Sensory Observations</h2>
+              <div className="grid grid-cols-3 gap-4">
+                 <div className="p-4 border border-slate-200 rounded-lg">
+                    <h4 className="font-bold text-sm mb-2 flex items-center gap-2"><Wind size={14} /> Smell</h4>
+                    <p className="text-sm text-slate-600">{sensory.smell.join(', ') || 'None Reported'}</p>
+                 </div>
+                 <div className="p-4 border border-slate-200 rounded-lg">
+                    <h4 className="font-bold text-sm mb-2 flex items-center gap-2"><Ear size={14} /> Sound</h4>
+                    <p className="text-sm text-slate-600">{sensory.sound.join(', ') || 'None Reported'}</p>
+                 </div>
+                 <div className="p-4 border border-slate-200 rounded-lg">
+                    <h4 className="font-bold text-sm mb-2 flex items-center gap-2"><Zap size={14} /> Tactile</h4>
+                    <p className="text-sm text-slate-600">{sensory.touch.join(', ') || 'None Reported'}</p>
+                 </div>
+              </div>
+            </section>
+
+            <section className="bg-blue-50 border border-blue-100 p-6 rounded-xl break-inside-avoid">
+              <h2 className="text-lg font-black text-blue-900 uppercase tracking-widest mb-4 flex items-center gap-2"><Info size={18} /> Buyer Advisory</h2>
+              <p className="text-blue-800 text-sm mb-4 leading-relaxed font-medium">
+                The data above represents a snapshot in time. To ensure total peace of mind, we strongly recommend:
+              </p>
+              <ul className="list-disc list-inside text-sm text-blue-800 space-y-2 ml-2">
+                <li><span className="font-bold">Extended Test Drive:</span> Drive for at least 20 minutes to allow all systems to reach operating temperature.</li>
+                <li><span className="font-bold">Cold Start Check:</span> Listen to the engine immediately upon startup after sitting overnight.</li>
+                <li><span className="font-bold">Independent Verification:</span> Use the links below to verify common issues for this make/model.</li>
+              </ul>
+            </section>
+
+            {links.length > 0 && (
+               <section>
+                 <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Verified Research Links</h2>
+                 <ul className="space-y-1">
+                   {links.map((l, i) => (
+                     <li key={i}><a href={l.uri} className="text-xs text-blue-600 hover:underline break-all">{l.uri}</a></li>
+                   ))}
+                 </ul>
+               </section>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

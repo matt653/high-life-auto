@@ -106,7 +106,7 @@ const InventoryLive = () => {
     // --- Advanced Filtering State ---
     const [sortKey, setSortKey] = useState('retail');
     const [sortOrder, setSortOrder] = useState('asc');
-    const [maxMileage, setMaxMileage] = useState(250000);
+    const [maxMileage, setMaxMileage] = useState(1000000);
 
     // Persistence Keys
     const SETTINGS_KEY = 'highlife_settings_v1';

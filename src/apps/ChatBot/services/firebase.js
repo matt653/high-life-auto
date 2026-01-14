@@ -21,4 +21,6 @@ if (!firebase.apps.length) {
 
 export const auth = firebase.auth();
 export const db = getFirestore(firebase.app());
+import { getStorage } from 'firebase/storage';
+export const storage = getStorage(firebase.app());
 export const appId = 'highlife-auto-crm';
