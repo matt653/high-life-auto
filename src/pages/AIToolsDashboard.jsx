@@ -15,9 +15,6 @@ const AIToolsDashboard = () => {
         }
     }, []);
 
-    // Manually define tools for now, or fetch if we had a manifest
-    // Since we are linking to a local folder, we can't easily "scan" it with client-side JS.
-    // We will list the known tools here.
     const KNOWN_TOOLS = [
         {
             name: "Inventory Online",
@@ -46,30 +43,26 @@ const AIToolsDashboard = () => {
             isInternal: true
         },
         {
-            name: "Marketplace Poster",
-            path: "/AI - Marketplace Posting Tool/index.html",
-            description: "Automated listing tool.",
-            color: "bg-orange-500"
-        },
-        {
-            name: "Customer Care",
-            path: "/AI - Post Sale Custmer Care/index.html",
-            description: "Post-sale follow up workflows.",
-            color: "bg-pink-500"
-        },
-        {
             name: "Car Grading",
-            path: "/AI - Car Grading/index.html",
-            description: "Vehicle inspection and grading.",
-            color: "bg-red-500"
+            path: "/inventory",
+            description: "Vehicle inspection and grading (Now in Showroom).",
+            color: "bg-red-500",
+            isInternal: true
         },
         {
-            name: "CSV to Web",
-            path: "/AI - send csv to  web/index.html",
-            description: "Sync CSV data to website.",
-            color: "bg-indigo-500"
+            name: "Marketplace Poster",
+            path: "/apps/marketplace",
+            description: "AI Listing Generator.",
+            color: "bg-orange-500",
+            isInternal: true
         },
-        // Add more tools here manually as you build them
+        {
+            name: "Bluetooth Assistant",
+            path: "/apps/bluetooth",
+            description: "OBD-II Pro Diagnostics & Pairing.",
+            color: "bg-cyan-500",
+            isInternal: true
+        }
     ];
 
     const handleLogin = () => {

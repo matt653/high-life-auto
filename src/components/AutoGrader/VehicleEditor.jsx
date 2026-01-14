@@ -200,6 +200,12 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                 >
                                     Edit Report Card
                                 </button>
+                                <button
+                                    onClick={() => setActiveTab('images')}
+                                    className={`ag-tab-btn ${activeTab === 'images' ? 'active' : ''}`}
+                                >
+                                    Images
+                                </button>
                             </div>
                             <button
                                 onClick={handleRunAI}
@@ -300,6 +306,90 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                             </ul>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {activeTab === 'images' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                                    <div className="ag-card" style={{ backgroundColor: '#f0f9ff', borderColor: '#bae6fd' }}>
+                                        <h4 style={{ margin: 0, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>📸</span> Image Manager
+                                        </h4>
+                                        <p style={{ fontSize: '0.875rem', color: '#0c4a6e', marginTop: '0.5rem' }}>
+                                            Drag and drop support coming soon. For now, use the buttons to reorder.
+                                            The first image is the <strong>Primary</strong> photo.
+                                        </p>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+                                        {formData.imageUrls && formData.imageUrls.map((url, index) => (
+                                            <div key={index} style={{ position: 'relative', borderRadius: '0.5rem', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', border: index === 0 ? '3px solid #2563eb' : '1px solid #e5e7eb' }}>
+                                                {index === 0 && (
+                                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: '#2563eb', color: 'white', fontSize: '0.65rem', fontWeight: 'bold', textAlign: 'center', padding: '0.1rem' }}>PRIMARY</div>
+                                                )}
+
+                                                <div style={{ aspectRatio: '4/3', backgroundColor: '#eee' }}>
+                                                    <img src={url} alt={`Vehicle ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                </div>
+
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                                    {index !== 0 && (
+                                                        <button
+                                                            onClick={() => {
+                                                                const newImages = [...formData.imageUrls];
+                                                                // Swap with 0 (Make Primary)
+                                                                [newImages[0], newImages[index]] = [newImages[index], newImages[0]];
+                                                                setFormData(prev => ({ ...prev, imageUrls: newImages }));
+                                                            }}
+                                                            style={{ padding: '0.25rem', backgroundColor: '#eff6ff', border: 'none', fontSize: '0.7rem', color: '#1d4ed8', cursor: 'pointer', fontWeight: 'bold' }}
+                                                        >
+                                                            Make Primary
+                                                        </button>
+                                                    )}
+
+                                                    <div style={{ display: 'flex' }}>
+                                                        <button
+                                                            disabled={index === 0}
+                                                            onClick={() => {
+                                                                if (index === 0) return;
+                                                                const newImages = [...formData.imageUrls];
+                                                                [newImages[index - 1], newImages[index]] = [newImages[index], newImages[index - 1]];
+                                                                setFormData(prev => ({ ...prev, imageUrls: newImages }));
+                                                            }}
+                                                            style={{ flex: 1, padding: '0.25rem', backgroundColor: 'white', border: 'none', borderRight: '1px solid #eee', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#ccc' : '#333' }}
+                                                        >
+                                                            &larr;
+                                                        </button>
+                                                        <button
+                                                            disabled={index === formData.imageUrls.length - 1}
+                                                            onClick={() => {
+                                                                if (index === formData.imageUrls.length - 1) return;
+                                                                const newImages = [...formData.imageUrls];
+                                                                [newImages[index + 1], newImages[index]] = [newImages[index], newImages[index + 1]];
+                                                                setFormData(prev => ({ ...prev, imageUrls: newImages }));
+                                                            }}
+                                                            style={{ flex: 1, padding: '0.25rem', backgroundColor: 'white', border: 'none', cursor: index === formData.imageUrls.length - 1 ? 'not-allowed' : 'pointer', color: index === formData.imageUrls.length - 1 ? '#ccc' : '#333' }}
+                                                        >
+                                                            &rarr;
+                                                        </button>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            // Mock "AI Enhance" - just append a query param to bust cache or simulated effect?
+                                                            // For now, let's just alert
+                                                            alert("AI Enhancement: Auto-adjusting brightness and removing background noise... (Simulation)");
+                                                        }}
+                                                        style={{ padding: '0.25rem', backgroundColor: '#fdf2f8', border: 'none', fontSize: '0.7rem', color: '#db2777', cursor: 'pointer', borderTop: '1px solid #fce7f3' }}
+                                                        title="Auto-Fix Lighting & Color"
+                                                    >
+                                                        ✨ Auto-Fix
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 

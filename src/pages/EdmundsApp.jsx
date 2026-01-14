@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const EdmundsApp = () => {
     const [activeTab, setActiveTab] = useState('decoder');
-    const [apiKey, setApiKey] = useState('');
+    const [apiKey, setApiKey] = useState(import.meta.env.VITE_EDMUNDS_API_KEY || '');
 
     // Shared Inputs
     const [vin, setVin] = useState('');

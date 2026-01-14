@@ -19,6 +19,7 @@ const AIToolsDashboard = lazy(() => import('./pages/AIToolsDashboard'));
 const ChatBotApp = lazy(() => import('./pages/ChatBotApp'));
 const EdmundsApp = lazy(() => import('./pages/EdmundsApp'));
 const BluetoothApp = lazy(() => import('./pages/BluetoothApp'));
+const MarketplaceApp = lazy(() => import('./pages/MarketplaceApp'));
 
 const StaffPortal = lazy(() => import('./pages/StaffPortal'));
 
@@ -51,6 +52,7 @@ function App() {
                   <Route path="/apps/chatbot" element={<ChatBotApp />} />
                   <Route path="/apps/edmunds" element={<EdmundsApp />} />
                   <Route path="/apps/bluetooth" element={<BluetoothApp />} />
+                  <Route path="/apps/marketplace" element={<MarketplaceApp />} />
                   <Route path="/secure-login-8191" element={<StaffPortal />} />
                 </Routes>
               </Suspense>

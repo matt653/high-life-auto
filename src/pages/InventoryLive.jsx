@@ -19,6 +19,8 @@ const parseCSV = (csv) => {
     const lines = csv.trim().split('\n');
     const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
 
+    if (!csv) return [];
+
     return lines.slice(1).filter(line => line.trim() !== '').map(line => {
         // Handle CSV parsing with potential commas inside quotes
         const values = [];
@@ -285,6 +287,12 @@ const InventoryLive = () => {
             blemishes: updatedVehicle.blemishes,
             groundingSources: updatedVehicle.groundingSources,
             websiteNotes: updatedVehicle.websiteNotes,
+            // PERSISTENT OVERRIDES (These overwrite CSV data)
+            retail: updatedVehicle.retail,
+            mileage: updatedVehicle.mileage,
+            imageUrls: updatedVehicle.imageUrls,
+            comments: updatedVehicle.comments,
+            options: updatedVehicle.options,
             lastUpdated: Date.now()
         };
 

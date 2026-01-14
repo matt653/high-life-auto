@@ -222,7 +222,7 @@ export const ChatWidget = ({ userId, inventory, knowledge, integrations, demoMod
                         <div className="absolute -bottom-2 w-4 h-4 bg-white transform rotate-45 border-r border-b border-gray-100"></div>
                     </div>
 
-                    {/* Realistic Animated SVG Avatar - Car Dude */}
+                    {/* Realistic Animated SVG Avatar - Car Dude (Clean Version) */}
                     <div className="w-48 h-80 animate-float drop-shadow-2xl">
                         <svg viewBox="0 0 200 400" className="w-full h-full" style={{ overflow: 'visible' }}>
                             <defs>
@@ -230,101 +230,68 @@ export const ChatWidget = ({ userId, inventory, knowledge, integrations, demoMod
                                     <stop offset="0%" stopColor="#F5D0A9" />
                                     <stop offset="100%" stopColor="#E0B080" />
                                 </linearGradient>
-                                <linearGradient id="denimGrad" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%" stopColor="#374151" />
-                                    <stop offset="100%" stopColor="#1F2937" />
+                                <linearGradient id="poloGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#1e3a8a" /> {/* Blue Polo */}
+                                    <stop offset="100%" stopColor="#172554" />
                                 </linearGradient>
-                                <linearGradient id="shirtGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#F3F4F6" />
-                                    <stop offset="100%" stopColor="#D1D5DB" />
-                                </linearGradient>
-                                <linearGradient id="jeansGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#3B82F6" />
-                                    <stop offset="100%" stopColor="#1E40AF" />
+                                <linearGradient id="pantsGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#e5e7eb" /> {/* Khakis/Gray Slacks */}
+                                    <stop offset="100%" stopColor="#d1d5db" />
                                 </linearGradient>
                             </defs>
 
                             {/* Shadow */}
-                            <ellipse cx="100" cy="390" rx="80" ry="10" fill="black" opacity="0.3" filter="blur(5px)" />
+                            <ellipse cx="100" cy="390" rx="60" ry="8" fill="black" opacity="0.2" filter="blur(4px)" />
 
-                            {/* --- LEGS (Distinct Pants!) --- */}
+                            {/* --- LEGS --- */}
                             {/* Left Leg */}
-                            <path d="M85 240 L70 360 L95 360 L100 240 Z" fill="url(#jeansGrad)" stroke="#1E3A8A" strokeWidth="1" />
+                            <path d="M85 240 L80 370 L95 370 L100 240 Z" fill="url(#pantsGrad)" stroke="#9ca3af" strokeWidth="1" />
                             {/* Right Leg */}
-                            <path d="M115 240 L130 360 L105 360 L100 240 Z" fill="url(#jeansGrad)" stroke="#1E3A8A" strokeWidth="1" />
-                            {/* Crotch Area */}
-                            <path d="M85 240 L115 240 L100 260 Z" fill="url(#jeansGrad)" />
+                            <path d="M115 240 L120 370 L105 370 L100 240 Z" fill="url(#pantsGrad)" stroke="#9ca3af" strokeWidth="1" />
+                            {/* Crotch */}
+                            <path d="M85 240 L115 240 L100 280 Z" fill="url(#pantsGrad)" />
 
-                            {/* Grease stains / Distress on jeans */}
-                            <path d="M75 300 Q80 295 85 300" fill="none" stroke="#60A5FA" strokeWidth="2" opacity="0.5" />
-                            <path d="M120 320 Q125 315 130 320" fill="none" stroke="#60A5FA" strokeWidth="2" opacity="0.5" />
-                            <circle cx="80" cy="280" r="3" fill="#1F2937" opacity="0.3" /> {/* Grease spot */}
+                            {/* --- SHOES (Clean Sneakers) --- */}
+                            <path d="M75 370 L95 370 L95 385 Q95 390 85 390 L75 390 Q70 390 70 380 Z" fill="#ffffff" />
+                            <path d="M125 370 L105 370 L105 385 Q105 390 115 390 L125 390 Q130 390 130 380 Z" fill="#ffffff" />
 
-                            {/* --- BOOTS (Work Boots) --- */}
-                            <path d="M60 360 L95 360 L95 375 Q95 385 85 385 L70 385 Q60 385 60 375 Z" fill="#78350F" />
-                            <rect x="60" y="380" width="35" height="5" fill="#451a03" /> {/* Sole */}
+                            {/* --- TORSO (Polo Shirt) --- */}
+                            <path d="M70 100 Q75 90 85 100 L80 250 L120 250 L115 100 Q125 90 130 100 L135 150 L125 250 L75 250 L65 150 Z" fill="url(#poloGrad)" />
 
-                            <path d="M140 360 L105 360 L105 375 Q105 385 115 385 L130 385 Q140 385 140 375 Z" fill="#78350F" />
-                            <rect x="105" y="380" width="35" height="5" fill="#451a03" /> {/* Sole */}
+                            {/* Collar */}
+                            <path d="M85 100 L100 120 L115 100" fill="none" stroke="#60a5fa" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                            {/* Logo */}
+                            <circle cx="110" cy="130" r="5" fill="#facc15" /> {/* Gold Badge */}
 
-                            {/* --- TORSO --- */}
-                            {/* Undershirt (White Tee) - Dirty */}
-                            <path d="M75 110 L125 110 L125 250 L75 250 Z" fill="url(#shirtGrad)" />
-                            <circle cx="100" cy="180" r="15" fill="none" stroke="#E5E7EB" strokeWidth="2" /> {/* Logo hint */}
-                            <path d="M90 200 Q100 210 110 200" stroke="#9CA3AF" strokeWidth="2" fill="none" /> {/* Wrinkle */}
-
-                            {/* Work Shirt / Vest (Unbuttoned) */}
-                            <path d="M60 110 Q70 100 80 110 L80 250 L65 240 Z" fill="url(#denimGrad)" /> {/* Left Panel */}
-                            <path d="M140 110 Q130 100 120 110 L120 250 L135 240 Z" fill="url(#denimGrad)" /> {/* Right Panel */}
-
-                            {/* Shoulders/Arms */}
+                            {/* --- ARMS --- */}
                             {/* Left Arm (Relaxed) */}
-                            <path d="M60 120 Q40 160 55 200" stroke="url(#skinGrad)" strokeWidth="16" strokeLinecap="round" fill="none" />
-                            <circle cx="55" cy="205" r="9" fill="url(#skinGrad)" /> {/* Hand */}
+                            <path d="M65 110 Q50 150 60 190" stroke="url(#skinGrad)" strokeWidth="14" strokeLinecap="round" fill="none" />
+                            <circle cx="60" cy="195" r="8" fill="url(#skinGrad)" />
 
-                            {/* Right Arm (Holding Wrench) */}
-                            <path d="M140 120 Q160 160 145 200" stroke="url(#skinGrad)" strokeWidth="16" strokeLinecap="round" fill="none" />
-                            <circle cx="145" cy="205" r="9" fill="url(#skinGrad)" /> {/* Hand */}
+                            {/* Right Arm (Holding Keys) */}
+                            <path d="M135 110 Q150 150 140 190" stroke="url(#skinGrad)" strokeWidth="14" strokeLinecap="round" fill="none" />
+                            <circle cx="140" cy="195" r="8" fill="url(#skinGrad)" />
 
-                            {/* Wrench */}
-                            <g transform="translate(145, 205) rotate(-20)">
-                                <rect x="-5" y="-15" width="10" height="40" fill="#9CA3AF" rx="2" />
-                                <circle cx="0" cy="-20" r="8" fill="#9CA3AF" />
-                                <circle cx="0" cy="-20" r="4" fill="#374151" /> {/* Wrench hole */}
-                            </g>
+                            {/* Car Keys (Fob) */}
+                            <rect x="135" y="195" width="10" height="15" rx="2" fill="black" />
+                            <rect x="138" y="210" width="4" height="10" fill="#9ca3af" />
 
                             {/* --- HEAD --- */}
-                            {/* Neck */}
-                            <rect x="85" y="90" width="30" height="25" fill="url(#skinGrad)" />
+                            <rect x="88" y="85" width="24" height="20" fill="url(#skinGrad)" /> {/* Neck */}
 
                             {/* Face */}
-                            <path d="M75 60 Q75 105 100 105 Q125 105 125 60 Q125 20 100 20 Q75 20 75 60" fill="url(#skinGrad)" />
+                            <path d="M75 55 Q75 95 100 95 Q125 95 125 55 Q125 25 100 25 Q75 25 75 55" fill="url(#skinGrad)" />
 
-                            {/* Cap (Backwards) */}
-                            <path d="M72 50 Q75 20 100 20 Q125 20 128 50 L125 60 Q100 55 75 60 Z" fill="#EA580C" />
-                            <rect x="85" y="55" width="30" height="5" fill="#C2410C" rx="2" /> {/* Cap adjust strap area */}
+                            {/* Sunglasses (Cool Vibe) */}
+                            <path d="M80 55 L100 55 L120 55 Q125 55 125 60 L120 65 Q110 70 100 65 Q90 70 80 65 L75 60 Q75 55 80 55 Z" fill="#111827" />
+                            <line x1="100" y1="55" x2="100" y2="65" stroke="#111827" strokeWidth="1" />
 
-                            {/* Hair (Messy under cap) */}
-                            <path d="M72 60 L70 70 L75 65" fill="#3E2723" />
-                            <path d="M128 60 L130 70 L125 65" fill="#3E2723" />
+                            {/* Smile */}
+                            <path d="M90 80 Q100 85 110 80" stroke="#8B4513" strokeWidth="2" fill="none" strokeLinecap="round" />
 
-                            {/* Facial Features */}
-                            <g className="animate-blink">
-                                <circle cx="90" cy="70" r="2.5" fill="#1F2937" />
-                                <circle cx="110" cy="70" r="2.5" fill="#1F2937" />
-                            </g>
+                            {/* Hair (Clean Cut) */}
+                            <path d="M75 55 Q75 20 100 15 Q125 20 125 55 L125 50 Q120 10 100 10 Q80 10 75 50 Z" fill="#4B5563" />
 
-                            {/* Grease Smudge on Cheek */}
-                            <path d="M82 78 Q85 80 88 78" stroke="#4B5563" strokeWidth="2" opacity="0.4" />
-
-                            {/* Nose */}
-                            <path d="M100 70 L98 80 L102 80 Z" fill="#C18C5D" opacity="0.4" />
-
-                            {/* Mouth (Confidence Smirk) */}
-                            <path d="M92 90 Q100 95 112 88" stroke="#8B4513" strokeWidth="2" fill="none" strokeLinecap="round" />
-
-                            {/* 5 o'clock shadow */}
-                            <path d="M80 85 Q100 110 120 85" fill="#000" opacity="0.08" />
                         </svg>
                     </div>
                 </div>
@@ -332,8 +299,8 @@ export const ChatWidget = ({ userId, inventory, knowledge, integrations, demoMod
 
             {/* 2. The Thought Bubble (The Chat Interface) */}
             <div className={`fixed z-40 transition-all duration-500 ease-out origin-bottom-right ${isOpen
-                    ? 'bottom-20 right-4 md:right-8 opacity-100 scale-100 translate-y-0'
-                    : 'bottom-20 right-8 opacity-0 scale-50 translate-y-10 pointer-events-none'
+                ? 'bottom-20 right-4 md:right-8 opacity-100 scale-100 translate-y-0'
+                : 'bottom-20 right-8 opacity-0 scale-50 translate-y-10 pointer-events-none'
                 }`}>
                 <div className="relative">
                     {/* Thought Bubbles Connector */}
@@ -354,21 +321,15 @@ export const ChatWidget = ({ userId, inventory, knowledge, integrations, demoMod
                                         {/* Face Shape */}
                                         <path d="M25 40 Q25 90 50 90 Q75 90 75 40 Q75 10 50 10 Q25 10 25 40" fill="#F5D0A9" />
 
-                                        {/* Cap */}
-                                        <path d="M22 30 Q50 15 78 30 L75 40 Q50 35 25 40 Z" fill="#EA580C" />
+                                        {/* Hair (Clean Cut) */}
+                                        <path d="M25 40 Q25 10 50 5 Q75 10 75 40 L75 35 Q70 0 50 0 Q30 0 25 35 Z" fill="#4B5563" />
 
-                                        {/* Eyes */}
-                                        <circle cx="40" cy="55" r="3" fill="#1F2937" />
-                                        <circle cx="60" cy="55" r="3" fill="#1F2937" />
+                                        {/* Sunglasses */}
+                                        <path d="M30 40 L45 40 L55 40 L70 40 Q75 40 75 45 L70 50 Q60 55 50 50 Q40 55 30 50 L25 45 Q25 40 30 40 Z" fill="#111827" />
+                                        <line x1="50" y1="40" x2="50" y2="50" stroke="#111827" strokeWidth="1" />
 
-                                        {/* Grease */}
-                                        <path d="M30 65 Q35 68 38 65" stroke="#4B5563" strokeWidth="2" opacity="0.4" />
-
-                                        {/* Smirk */}
-                                        <path d="M40 75 Q50 80 65 72" stroke="#8B4513" strokeWidth="3" fill="none" strokeLinecap="round" />
-
-                                        {/* Stubble */}
-                                        <path d="M30 70 Q50 95 70 70" fill="#000" opacity="0.08" />
+                                        {/* Smile */}
+                                        <path d="M35 70 Q50 75 65 70" stroke="#8B4513" strokeWidth="3" fill="none" strokeLinecap="round" />
                                     </svg>
                                 </div>
                                 <div>
@@ -391,8 +352,8 @@ export const ChatWidget = ({ userId, inventory, knowledge, integrations, demoMod
                                         </div>
                                     )}
                                     <div className={`max-w-[80%] p-3 px-4 rounded-2xl text-sm leading-relaxed shadow-sm ${m.role === 'user'
-                                            ? 'bg-blue-600 text-white rounded-br-sm'
-                                            : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm'
+                                        ? 'bg-blue-600 text-white rounded-br-sm'
+                                        : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm'
                                         }`}>
                                         {m.text}
                                     </div>
