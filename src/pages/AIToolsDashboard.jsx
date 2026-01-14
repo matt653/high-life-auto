@@ -8,6 +8,13 @@ const AIToolsDashboard = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [tools, setTools] = useState([]);
 
+    useEffect(() => {
+        const auth = localStorage.getItem('highlife_staff_auth');
+        if (auth === 'true') {
+            setIsAuthenticated(true);
+        }
+    }, []);
+
     // Manually define tools for now, or fetch if we had a manifest
     // Since we are linking to a local folder, we can't easily "scan" it with client-side JS.
     // We will list the known tools here.
@@ -69,6 +76,7 @@ const AIToolsDashboard = () => {
         const password = prompt("Enter Master Password:");
         if (password === "Highlife8191!") {
             setIsAuthenticated(true);
+            localStorage.setItem('highlife_staff_auth', 'true');
         } else {
             alert("Incorrect password.");
         }

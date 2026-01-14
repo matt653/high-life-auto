@@ -492,7 +492,12 @@ const InventoryLive = () => {
                             padding: '1rem 0'
                         }}>
                             {filteredCars.map((car) => (
-                                <Link to={`/vehicle/${car.stockNumber}`} key={car.stockNumber} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <Link
+                                    to={`/vehicle/${car.stockNumber}`}
+                                    key={car.stockNumber}
+                                    state={{ vehicle: car }}
+                                    style={{ textDecoration: 'none', color: 'inherit' }}
+                                >
                                     <div style={{
                                         border: '1px solid var(--color-border)',
                                         backgroundColor: 'white',

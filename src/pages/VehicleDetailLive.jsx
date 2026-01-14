@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart, AlertCircle, ClipboardCheck } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../apps/ChatBot/services/firebase';
@@ -199,6 +199,7 @@ const InteractiveGrader = ({ gradeData }) => {
 
 const VehicleDetailLive = () => {
     const { id } = useParams(); // 'id' here corresponds to the Stock Number
+    const location = useLocation();
     const [car, setCar] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -231,6 +232,23 @@ const VehicleDetailLive = () => {
     const loadVehicle = async () => {
         setLoading(true);
         try {
+            // Strategy 0: Check Router State (Instant Load)
+            if (location.state?.vehicle && location.state.vehicle.stockNumber === id) {
+                console.log("Loading from Router State");
+                let foundCar = location.state.vehicle;
+                setCar({
+                    ...foundCar,
+                    id: foundCar.stockNumber,
+                    photos: foundCar.imageUrls || [],
+                    youtubeVideoUrl: foundCar.youtubeUrl,
+                    story: foundCar.marketingDescription || foundCar.comments || "No description available.",
+                    price: parseFloat(foundCar.retail) || 0,
+                });
+                if (foundCar.aiGrade) setVehicleGrade(foundCar.aiGrade);
+                setLoading(false);
+                return;
+            }
+
             // Strategy 1: Data from Inventory (if available)
             const STORAGE_KEY = 'highlife_inventory_v1';
             let vehicles = [];
@@ -345,9 +363,20 @@ const VehicleDetailLive = () => {
             <div className="container" style={{ padding: '5rem 0', textAlign: 'center' }}>
                 <h2>Vehicle not found</h2>
                 <p>This car might have been sold or the inventory hasn't synced yet.</p>
-                <Link to="/inventory" className="btn btn-primary" style={{ marginTop: '2rem' }}>
-                    Back to Showroom
-                </Link>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+                    <Link to="/inventory" className="btn btn-outline">
+                        Back to Showroom
+                    </Link>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('highlife_inventory_v1');
+                            window.location.reload();
+                        }}
+                        className="btn btn-primary"
+                    >
+                        ↻ Force Refresh Data
+                    </button>
+                </div>
             </div>
         );
     }
