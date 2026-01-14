@@ -11,7 +11,10 @@ export const analyzeVehicle = async (vehicle) => {
 
     // Use the reliable google-generative-ai library
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+        tools: [{ googleSearch: {} }]
+    });
 
     // --- Dynamic Weight Calculation for Prompt ---
     const price = parseFloat(vehicle.retail || 0);

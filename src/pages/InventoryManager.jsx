@@ -121,7 +121,7 @@ const InventoryManager = () => {
         }
 
         // Staff Auth Check
-        if (localStorage.getItem('highlife_staff_auth') === 'true') {
+        if (sessionStorage.getItem('highlife_staff_auth') === 'true') {
             setIsAuthenticated(true);
         }
         // No redirect logic here, simply wait for auth or show lock screen
@@ -320,7 +320,7 @@ const InventoryManager = () => {
         const password = prompt("Enter Dealer Password:");
         if (password === "Highlife8191!") {
             setIsAuthenticated(true);
-            localStorage.setItem('highlife_staff_auth', 'true');
+            sessionStorage.setItem('highlife_staff_auth', 'true');
         } else {
             alert("Incorrect password.");
         }
@@ -375,7 +375,7 @@ const InventoryManager = () => {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        localStorage.removeItem('highlife_staff_auth');
+                                        sessionStorage.removeItem('highlife_staff_auth');
                                         setIsAuthenticated(false);
                                         window.location.reload();
                                     }}
