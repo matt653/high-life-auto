@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { analyzeVehicle } from '../../services/geminiService';
 import './AutoGrader.css';
-import { RefreshCw, Play, FileText, CheckCircle, ArrowLeft, ArrowRight, Save, X, Image as ImageIcon, Layout, Box } from 'lucide-react';
+import { RefreshCw, Play, FileText, CheckCircle, ArrowLeft, ArrowRight, Save, X, Image as ImageIcon, Layout, Box, Trash2 } from 'lucide-react';
 
 const VehicleEditor = ({ vehicle, onSave, onClose }) => {
     const [formData, setFormData] = useState({ ...vehicle });
@@ -290,15 +290,22 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                             </div>
 
                                             {/* Action Buttons */}
-                                            <div style={{ padding: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem' }}>
+                                            <div style={{ padding: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.25rem' }}>
                                                 <button onClick={() => moveImage(index, -1)} disabled={index === 0} style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', background: 'white' }} title="Move Left">
                                                     <ArrowLeft size={16} />
                                                 </button>
                                                 <button onClick={() => moveImage(index, 1)} disabled={index === (formData.imageUrls.length - 1)} style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', background: 'white' }} title="Move Right">
                                                     <ArrowRight size={16} />
                                                 </button>
-                                                <button onClick={() => makePrimary(index)} disabled={index === 0} style={{ gridColumn: 'span 2', padding: '0.5rem', backgroundColor: index === 0 ? '#f3f4f6' : '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: index === 0 ? 'default' : 'pointer' }}>
-                                                    {index === 0 ? 'Is Primary' : 'Make Primary'}
+                                                <button onClick={() => {
+                                                    const newImages = [...formData.imageUrls];
+                                                    newImages.splice(index, 1);
+                                                    setFormData(prev => ({ ...prev, imageUrls: newImages }));
+                                                }} style={{ padding: '0.5rem', border: '1px solid #fee2e2', borderRadius: '4px', cursor: 'pointer', background: '#fef2f2', color: '#dc2626' }} title="Delete Photo">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                <button onClick={() => makePrimary(index)} disabled={index === 0} style={{ gridColumn: 'span 3', padding: '0.5rem', backgroundColor: index === 0 ? '#f3f4f6' : '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: index === 0 ? 'default' : 'pointer' }}>
+                                                    {index === 0 ? 'Primary Photo' : 'Make Primary'}
                                                 </button>
                                             </div>
                                         </div>

@@ -324,6 +324,11 @@ const InventoryLive = () => {
             lastUpdated: Date.now()
         };
 
+        // SANITIZE DATA: Firestore hates 'undefined', so we convert to null
+        Object.keys(enhancementData).forEach(key => {
+            if (enhancementData[key] === undefined) enhancementData[key] = null;
+        });
+
         try {
             console.log("Saving to Firestore:", vin, enhancementData);
             await setDoc(doc(db, 'vehicle_enhancements', vin), enhancementData, { merge: true });
@@ -357,85 +362,20 @@ const InventoryLive = () => {
             <section style={{ backgroundColor: '#f9f9f9', padding: '3rem 0', borderBottom: '1px solid var(--color-border)' }}>
                 <div className="container">
 
-                    {/* Header / Mode Switcher */}
+                    {/* Public Header */}
                     <div style={{ marginBottom: '2rem' }}>
-                        {isAuthenticated ? (
-                            <div style={{ borderBottom: '1px solid #e5e7eb', display: 'flex', gap: '2rem', alignItems: 'center', paddingBottom: '0.5rem' }}>
-                                <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#111827', cursor: 'pointer' }} onClick={() => setViewMode('manager')}>
-                                    Digital Showroom
-                                </h1>
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <button
-                                        onClick={() => setViewMode('manager')}
-                                        style={{
-                                            background: 'none', border: 'none', borderBottom: viewMode === 'manager' ? '2px solid #2563eb' : 'none',
-                                            color: viewMode === 'manager' ? '#2563eb' : '#6b7280', fontWeight: '600', padding: '0.5rem 0', cursor: 'pointer'
-                                        }}
-                                    >
-                                        Inventory Manager
-                                    </button>
-                                    <button
-                                        onClick={() => window.location.href = '/lab'}
-                                        style={{
-                                            background: 'none', border: 'none', borderBottom: 'none',
-                                            color: '#6b7280', fontWeight: '600', padding: '0.5rem 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'
-                                        }}
-                                        onMouseEnter={(e) => e.target.style.color = '#7c3aed'}
-                                        onMouseLeave={(e) => e.target.style.color = '#6b7280'}
-                                    >
-                                        <span style={{ fontSize: '1.25rem' }}>🧪</span> AI Labs
-                                    </button>
-                                    <button
-                                        onClick={() => performSmartSync(true)}
-                                        style={{
-                                            background: 'none', border: 'none',
-                                            color: '#059669', fontWeight: '600', padding: '0.5rem 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'
-                                        }}
-                                        disabled={isSyncing}
-                                    >
-                                        <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} /> {isSyncing ? 'Syncing...' : 'Sync Feed'}
-                                    </button>
-                                    {/* DB Status */}
-                                    <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', fontSize: '0.75rem', gap: '0.5rem', padding: '0.25rem 0.75rem', borderRadius: '999px', backgroundColor: dbStatus.status === 'error' ? '#fee2e2' : '#f0fdf4', border: dbStatus.status === 'error' ? '1px solid #f87171' : '1px solid #bbf7d0' }}>
-                                        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: dbStatus.status === 'connected' ? '#22c55e' : (dbStatus.status === 'error' ? '#ef4444' : '#eab308') }} />
-                                        <span style={{ color: dbStatus.status === 'error' ? '#b91c1c' : '#15803d', fontWeight: 600 }}>
-                                            {dbStatus.status === 'connected' ? `Cloud Active (${dbStatus.count})` : (dbStatus.status === 'error' ? 'Cloud Error' : 'Connecting...')}
-                                        </span>
-                                    </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
                                 </div>
-                                <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
-                                    <button onClick={() => setViewMode('public')} className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
-                                        View as Customer
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            localStorage.removeItem('highlife_staff_auth');
-                                            setIsAuthenticated(false);
-                                            setViewMode('public');
-                                            window.location.reload();
-                                        }}
-                                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', background: 'none', border: 'none', color: '#ef4444', textDecoration: 'underline', cursor: 'pointer' }}
-                                    >
-                                        Log Out
-                                    </button>
-                                </div>
+                                <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AlertCircle size={16} color="var(--color-accent)" />
+                                    Live inventory from Frazer DMS
+                                    {lastSyncTime && ` • Synced: ${lastSyncTime}`}
+                                </p>
                             </div>
-                        ) : (
-                            /* Public / Unauthenticated Header */
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
-
-                                    </div>
-                                    <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <AlertCircle size={16} color="var(--color-accent)" />
-                                        Live inventory from Frazer DMS
-                                        {lastSyncTime && ` • Synced: ${lastSyncTime}`}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* ACTIVE FILTERS BAR */}
@@ -531,145 +471,123 @@ const InventoryLive = () => {
 
 
                     {/* Content View */}
-                    {viewMode === 'manager' ? (
-                        <InventoryTable
-                            vehicles={filteredCars}
-                            onEdit={setEditingVehicle}
-                        />
-                    ) : (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                            gap: '2rem',
-                            padding: '1rem 0'
-                        }}>
-                            {filteredCars.map((car) => (
-                                <Link
-                                    to={`/vehicle/${car.stockNumber}`}
-                                    key={car.stockNumber}
-                                    state={{ vehicle: car }}
-                                    style={{ textDecoration: 'none', color: 'inherit' }}
-                                >
-                                    <div style={{
-                                        border: '1px solid var(--color-border)',
-                                        backgroundColor: 'white',
-                                        overflow: 'hidden',
-                                        transition: 'transform 0.2s, box-shadow 0.2s',
-                                        cursor: 'pointer',
-                                        position: 'relative'
-                                    }}>
-                                        {/* Image Area */}
-                                        <div style={{ height: '200px', backgroundColor: '#eee', position: 'relative' }}>
-                                            {car.imageUrls && car.imageUrls.length > 0 ? (
-                                                <img
-                                                    src={car.imageUrls[0]}
-                                                    alt={`${car.year} ${car.make} ${car.model}`}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    loading="lazy"
-                                                />
-                                            ) : (
-                                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
-                                                    No Photo
-                                                </div>
-                                            )}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                        gap: '2rem',
+                        padding: '1rem 0'
+                    }}>
+                        {filteredCars.map((car) => (
+                            <Link
+                                to={`/vehicle/${car.stockNumber}`}
+                                key={car.stockNumber}
+                                state={{ vehicle: car }}
+                                style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                                <div style={{
+                                    border: '1px solid var(--color-border)',
+                                    backgroundColor: 'white',
+                                    overflow: 'hidden',
+                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                    cursor: 'pointer',
+                                    position: 'relative'
+                                }}>
+                                    {/* Image Area */}
+                                    <div style={{ height: '200px', backgroundColor: '#eee', position: 'relative' }}>
+                                        {car.imageUrls && car.imageUrls.length > 0 ? (
+                                            <img
+                                                src={car.imageUrls[0]}
+                                                alt={`${car.year} ${car.make} ${car.model}`}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                                                No Photo
+                                            </div>
+                                        )}
 
-                                            {/* Price Tag */}
-                                            <div style={{
+                                        {/* Price Tag */}
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            backgroundColor: 'var(--color-primary)',
+                                            color: 'var(--color-gold)',
+                                            padding: '0.5rem 1rem',
+                                            fontWeight: 800,
+                                            fontSize: '1.25rem'
+                                        }}>
+                                            ${parseFloat(car.retail).toLocaleString()}
+                                        </div>
+
+                                        {/* Garage Heart */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                toggleGarage(car);
+                                            }}
+                                            style={{
                                                 position: 'absolute',
-                                                bottom: 0,
-                                                left: 0,
-                                                backgroundColor: 'var(--color-primary)',
-                                                color: 'var(--color-gold)',
-                                                padding: '0.5rem 1rem',
-                                                fontWeight: 800,
-                                                fontSize: '1.25rem'
-                                            }}>
-                                                ${parseFloat(car.retail).toLocaleString()}
-                                            </div>
-
-                                            {/* Garage Heart */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    toggleGarage(car);
-                                                }}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: '0.5rem',
-                                                    right: '0.5rem',
-                                                    background: 'rgba(255,255,255,0.9)',
-                                                    border: 'none',
-                                                    borderRadius: '50%',
-                                                    width: '36px',
-                                                    height: '36px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    cursor: 'pointer',
-                                                    color: isInGarage(car.stockNumber) ? '#ef4444' : '#ccc'
-                                                }}
-                                            >
-                                                <Heart size={20} fill={isInGarage(car.stockNumber) ? '#ef4444' : 'none'} />
-                                            </button>
-                                        </div>
-
-                                        {/* Details Area */}
-                                        <div style={{ padding: '1.5rem' }}>
-                                            <div style={{ color: '#666', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                                                {car.year}
-                                            </div>
-                                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: 'var(--color-text)' }}>
-                                                {car.make} {car.model} {car.trim}
-                                            </h3>
-
-                                            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#888', marginBottom: '1rem' }}>
-                                                <span>{parseInt(car.mileage).toLocaleString()} miles</span>
-                                                <span>•</span>
-                                                <span>Stock #{car.stockNumber}</span>
-                                            </div>
-
-                                            {/* Grade Badge */}
-                                            {/* Grade Badge */}
-                                            {car.aiGrade && (
-                                                <div style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.25rem',
-                                                    backgroundColor: car.aiGrade.overallGrade ? '#dcfce7' : '#f3f4f6',
-                                                    color: car.aiGrade.overallGrade ? '#166534' : '#666',
-                                                    padding: '0.25rem 0.5rem',
-                                                    borderRadius: '4px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 800,
-                                                    border: car.aiGrade.overallGrade ? '1px solid #bbf7d0' : 'none'
-                                                }}>
-                                                    <Shield size={12} fill={car.aiGrade.overallGrade ? "#166534" : "#ccc"} />
-                                                    {car.aiGrade.overallGrade ? `Grade: ${car.aiGrade.overallGrade}` : 'Graded (Reviewing)'}
-                                                </div>
-                                            )}
-                                        </div>
+                                                top: '0.5rem',
+                                                right: '0.5rem',
+                                                background: 'rgba(255,255,255,0.9)',
+                                                border: 'none',
+                                                borderRadius: '50%',
+                                                width: '36px',
+                                                height: '36px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                color: isInGarage(car.stockNumber) ? '#ef4444' : '#ccc'
+                                            }}
+                                        >
+                                            <Heart size={20} fill={isInGarage(car.stockNumber) ? '#ef4444' : 'none'} />
+                                        </button>
                                     </div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
 
-                    {viewMode === 'manager' && (
-                        <div style={{ marginTop: '2rem', textAlign: 'center', opacity: 0.5 }}>
-                            <small>Manager Access Active</small>
-                        </div>
-                    )}
-                </div>
+                                    {/* Details Area */}
+                                    <div style={{ padding: '1.5rem' }}>
+                                        <div style={{ color: '#666', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+                                            {car.year}
+                                        </div>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: 'var(--color-text)' }}>
+                                            {car.make} {car.model} {car.trim}
+                                        </h3>
+
+                                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#888', marginBottom: '1rem' }}>
+                                            <span>{parseInt(car.mileage).toLocaleString()} miles</span>
+                                            <span>•</span>
+                                            <span>Stock #{car.stockNumber}</span>
+                                        </div>
+
+                                        {/* Grade Badge */}
+                                        {/* Grade Badge */}
+                                        {car.aiGrade && (
+                                            <div style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                backgroundColor: car.aiGrade.overallGrade ? '#dcfce7' : '#f3f4f6',
+                                                color: car.aiGrade.overallGrade ? '#166534' : '#666',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '4px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 800,
+                                                border: car.aiGrade.overallGrade ? '1px solid #bbf7d0' : 'none'
+                                            }}>
+                                                <Shield size={12} fill={car.aiGrade.overallGrade ? "#166534" : "#ccc"} />
+                                                {car.aiGrade.overallGrade ? `Grade: ${car.aiGrade.overallGrade}` : 'Graded (Reviewing)'}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div> {/* End container */}
             </section>
-
-            {/* AutoGrader Modal */}
-            {editingVehicle && (
-                <VehicleEditor
-                    vehicle={editingVehicle}
-                    onSave={handleSaveVehicle}
-                    onClose={() => setEditingVehicle(null)}
-                />
-            )}
         </div>
     );
 };

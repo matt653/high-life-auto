@@ -10,7 +10,7 @@ const StaffPortal = () => {
         e.preventDefault();
         if (password === 'Highlife8191!') {
             localStorage.setItem('highlife_staff_auth', 'true');
-            navigate('/inventory');
+            navigate('/admin');
         } else {
             setError('Incorrect access code.');
         }
