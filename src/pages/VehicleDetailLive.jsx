@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart, AlertCircle, ClipboardCheck } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../apps/ChatBot/services/firebase';
 
 import { useGarage } from '../context/GarageContext';
 
@@ -100,6 +102,7 @@ const InteractiveGrader = ({ gradeData }) => {
             return;
         }
 
+        const finalScore = totalWeightedScore / totalPossibleWeight;
         const roundedScore = parseFloat(finalScore.toFixed(1));
 
         // Map 0-5 to Letter (User Rubric: 2.x=C, 3.x=B, 4.x=A)
@@ -214,36 +217,52 @@ const VehicleDetailLive = () => {
     const loadVehicle = async () => {
         setLoading(true);
         try {
-            // Strategy 1: Fast load from Local Storage
+            // Strategy 1: Data from Inventory (if available)
             const STORAGE_KEY = 'highlife_inventory_v1';
-            let savedData = localStorage.getItem(STORAGE_KEY);
             let vehicles = [];
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) vehicles = JSON.parse(savedData);
 
-            if (savedData) {
-                vehicles = JSON.parse(savedData);
-            } else {
-                console.log("Local cache miss. Fetching live data...");
-                // Strategy 2: Fetch live if local is empty (User landed directly on this page)
+            // Strategy 2: Fetch CSV if needed
+            if (!vehicles.length) {
                 try {
                     const response = await fetch(DEFAULT_CSV_URL);
-                    if (response.ok) {
-                        const csvText = await response.text();
-                        vehicles = parseCSV(csvText);
-                        // Optional: Save to local storage for navigation back to inventory
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
-                    }
-                } catch (netErr) {
-                    console.error("Network fetch failed", netErr);
-                }
+                    const csvText = await response.text();
+                    vehicles = parseCSV(csvText);
+                } catch (e) { console.error("CSV Fetch Error", e); }
             }
 
-            // Find vehicle by Stock Number
-            const foundCar = vehicles.find(v => v.stockNumber === id);
+            // Find car
+            let foundCar = vehicles.find(v => v.stockNumber === id);
 
             if (foundCar) {
+                // FETCH LIVE DATA FROM FIRESTORE (Crucial Step!)
+                // This ensures we get the latest Grade/Story even if not in CSV/Local Storage
+                if (foundCar.vin) {
+                    try {
+                        const docRef = doc(db, 'vehicle_enhancements', foundCar.vin);
+                        const docSnap = await getDoc(docRef);
+
+                        if (docSnap.exists()) {
+                            const liveData = docSnap.data();
+                            console.log("Found Live Firestore Data:", liveData);
+
+                            // Merge Live Data
+                            foundCar = {
+                                ...foundCar,
+                                aiGrade: liveData.aiGrade || foundCar.aiGrade,
+                                marketingDescription: liveData.marketingDescription || foundCar.marketingDescription,
+                                blemishes: liveData.blemishes || foundCar.blemishes,
+                                websiteNotes: liveData.websiteNotes || foundCar.websiteNotes
+                            };
+                        }
+                    } catch (err) {
+                        console.error("Firestore Fetch Error in Detail View:", err);
+                    }
+                }
+
                 setCar({
                     ...foundCar,
-                    // Harmonize property names
                     id: foundCar.stockNumber,
                     photos: foundCar.imageUrls || [],
                     youtubeVideoUrl: foundCar.youtubeUrl,
@@ -258,9 +277,9 @@ const VehicleDetailLive = () => {
                 console.log("Vehicle not found in data");
                 setCar(null);
             }
-
         } catch (error) {
             console.error('Error loading vehicle:', error);
+            setCar(null);
         } finally {
             setLoading(false);
         }
