@@ -53,7 +53,12 @@ const parseCSV = (csv) => {
             imageUrls: get("Image URL").split('|'),
             comments: get("Comments"),
             options: get("Option List"),
-            type: get("Vehicle Type")
+            type: get("Vehicle Type"),
+            engine: get("Engine"),
+            transmission: get("Vehicle Transmission Type"),
+            exteriorColor: get("Exterior Color"),
+            interiorColor: get("Interior Color"),
+            marketPrice: get("Market Value")
         };
     });
 };
@@ -293,6 +298,11 @@ const InventoryLive = () => {
             imageUrls: updatedVehicle.imageUrls,
             comments: updatedVehicle.comments,
             options: updatedVehicle.options,
+            engine: updatedVehicle.engine,
+            transmission: updatedVehicle.transmission,
+            exteriorColor: updatedVehicle.exteriorColor,
+            interiorColor: updatedVehicle.interiorColor,
+            marketPrice: updatedVehicle.marketPrice,
             lastUpdated: Date.now()
         };
 

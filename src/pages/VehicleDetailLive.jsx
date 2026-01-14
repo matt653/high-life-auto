@@ -45,10 +45,11 @@ const parseCSV = (csv) => {
             options: get("Option List"),
             type: get("Vehicle Type"),
             // Added Spec Fields
-            engine: get("Vehicle Engine"),
-            transmission: get("Vehicle Transmission"),
-            exteriorColor: get("Vehicle Exterior Color"),
-            interiorColor: get("Vehicle Interior Color"),
+            engine: get("Engine"),
+            transmission: get("Vehicle Transmission Type"),
+            exteriorColor: get("Exterior Color"),
+            interiorColor: get("Interior Color"),
+            marketPrice: get("Market Value"),
             // Try to recover potential AI fields even if fresh fetch
             marketingDescription: get("marketingDescription"),
             websiteNotes: get("websiteNotes")
@@ -622,8 +623,8 @@ const VehicleDetailLive = () => {
                                     <p style={{ fontWeight: 600 }}>{car.exteriorColor || 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: '#888' }}>Int. Color</label>
-                                    <p style={{ fontWeight: 600 }}>{car.interiorColor || 'N/A'}</p>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: '#888' }}>Market Price</label>
+                                    <p style={{ fontWeight: 600, color: 'var(--color-accent)' }}>{car.marketPrice || 'N/A'}</p>
                                 </div>
                             </div>
 

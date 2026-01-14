@@ -46,7 +46,7 @@ const Homepage = () => {
                     borderBottom: '2px solid #b45309'
                 }}>
                     🚧 WEBSITE UNDER RENOVATION 🚧 <br className="md:hidden" />
-                    We are building a new experience! If you have any trouble, call or text <a href="tel:512-555-0199" style={{ textDecoration: 'underline', color: '#000' }}>Miriam</a> for immediate help.
+                    We are building a new experience! If you have any trouble, call or text <a href="tel:309-267-7200" style={{ textDecoration: 'underline', color: '#000' }}>Miriam (309-267-7200)</a> for immediate help.
                 </div>
 
                 <div className="container" style={{ position: 'relative', zIndex: 2, marginTop: '2rem' }}>

@@ -55,23 +55,60 @@ const App: React.FC = () => {
   const aiRef = useRef<any>(null);
 
   const connectBluetooth = async () => {
+    if (!('bluetooth' in navigator)) {
+      alert("Bluetooth is not supported in this browser. \n\n• Android: Use Chrome\n• iOS: Use 'Bluefy' browser\n• Desktop: Use Chrome/Edge/Opera");
+      return;
+    }
+
     setBtStatus('connecting');
     try {
+      /**
+       * OBDLink MX+ and other modern adapters require specific Service UUIDs to be discovered 
+       * reliably in Web Bluetooth. We filter by common names AND specific services.
+       */
       const device = await (navigator as any).bluetooth.requestDevice({
-        filters: [{ namePrefix: 'OBD' }, { namePrefix: 'ELM327' }],
-        optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+        filters: [
+          { namePrefix: 'OBD' },
+          { namePrefix: 'obd' },
+          { namePrefix: 'ELM' },
+          { namePrefix: 'Vgate' },
+          { namePrefix: 'Link' }, // Matches "Link" in some names
+          { name: 'OBDLink MX+' },
+          { name: 'OBDLink CX' },
+          // Common Generic BLE Service for OBD
+          { services: ['0000fff0-0000-1000-8000-00805f9b34fb'] }, 
+           // Specific OBDLink BLE Service
+          { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] }
+        ],
+        optionalServices: [
+          '00001101-0000-1000-8000-00805f9b34fb', // Standard SPP
+          '0000fff0-0000-1000-8000-00805f9b34fb', // Generic BLE
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // OBDLink Proprietary
+          '6e400001-b5a3-f393-e0a9-e50e24dcca9e'  // Nordic UART (often used in clones)
+        ]
       });
+
+      console.log("Device selected:", device.name || "Unnamed Device");
+
+      if (device.gatt) {
+        await device.gatt.connect();
+      }
+
       setBtDevice(device);
       setBtStatus('connected');
       setMode(DiagnosticMode.LIVE_MONITOR);
+      
       device.addEventListener('gattserverdisconnected', () => {
         setBtStatus('disconnected');
         setBtDevice(null);
       });
-    } catch (error) {
-      console.error("Bluetooth connection failed:", error);
+    } catch (error: any) {
       setBtStatus('disconnected');
-      alert("Bluetooth connection failed. Ensure your adapter is in pairing mode.");
+      if (error.name === 'NotFoundError' || error.message?.includes('cancelled')) {
+        return;
+      }
+      console.error("Bluetooth connection failed:", error);
+      alert(`Bluetooth Error: ${error.message}\n\nTroubleshooting for OBDLink MX+:\n1. Press the physical 'Pair' button on the adapter until the LED blinks fast.\n2. Ensure it is NOT connected to your phone's Bluetooth settings (forget the device if necessary).\n3. Use the 'Bluefy' browser on iOS.`);
     }
   };
 
@@ -228,6 +265,9 @@ const App: React.FC = () => {
               <button onClick={() => setMode(DiagnosticMode.LIVE_MONITOR)} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-bold text-lg transition-all border border-slate-700">
                 Launch Simulation
               </button>
+            </div>
+            <div className="text-xs text-slate-500 max-w-xs mx-auto italic mt-4">
+              Tip: Press the 'Connect' button on your OBDLink MX+ to make it discoverable.
             </div>
           </div>
         )}
