@@ -45,7 +45,7 @@ const parseCSV = (csv) => {
             trim: get("Vehicle Trim Level"),
             year: get("Vehicle Year"),
             mileage: get("Mileage"),
-            retail: get("Retail"),
+            retail: get("Retail").replace(/[^0-9.]/g, ''),
             cost: get("Cost"),
             youtubeUrl: get("YouTube URL"),
             imageUrls: get("Image URL").split('|'),

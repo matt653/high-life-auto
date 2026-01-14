@@ -35,7 +35,7 @@ const parseCSV = (csv) => {
             trim: get("Vehicle Trim Level"),
             year: get("Vehicle Year"),
             mileage: get("Mileage"),
-            retail: get("Retail"),
+            retail: get("Retail").replace(/[^0-9.]/g, ''),
             cost: get("Cost"),
             youtubeUrl: get("YouTube URL"),
             imageUrls: get("Image URL").split('|'),
@@ -400,7 +400,7 @@ const VehicleDetailLive = () => {
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                                 <span className="badge" style={{ backgroundColor: 'var(--color-gold)', color: 'white', padding: '0.5rem 1rem', fontSize: '1.25rem' }}>
-                                    ${car.price > 0 ? car.price.toLocaleString() : 'CALL FOR PRICE'}
+                                    {car.price > 0 ? `$${car.price.toLocaleString()}` : 'CALL FOR PRICE'}
                                 </span>
                                 <button
                                     onClick={() => toggleGarage(car)}
