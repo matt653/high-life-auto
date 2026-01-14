@@ -379,6 +379,17 @@ const InventoryLive = () => {
                                     <button onClick={() => setViewMode('public')} className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
                                         View as Customer
                                     </button>
+                                    <button
+                                        onClick={() => {
+                                            localStorage.removeItem('highlife_staff_auth');
+                                            setIsAuthenticated(false);
+                                            setViewMode('public');
+                                            window.location.reload();
+                                        }}
+                                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', background: 'none', border: 'none', color: '#ef4444', textDecoration: 'underline', cursor: 'pointer' }}
+                                    >
+                                        Log Out
+                                    </button>
                                 </div>
                             </div>
                         ) : (
