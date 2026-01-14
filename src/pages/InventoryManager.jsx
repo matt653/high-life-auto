@@ -264,26 +264,37 @@ const InventoryManager = () => {
 
         const vin = updatedVehicle.vin.trim().toUpperCase();
 
+        // MERGE STRATEGY: We explicitly save ALL editable fields to Firestore
+        // so they override the CSV feed on the frontend.
         const enhancementData = {
-            vin: vin,
+            vin: vin, // Key
+            // AI Data
             aiGrade: updatedVehicle.aiGrade,
             marketingDescription: updatedVehicle.marketingDescription,
             blemishes: updatedVehicle.blemishes,
             groundingSources: updatedVehicle.groundingSources,
-            websiteNotes: updatedVehicle.websiteNotes,
+            // Manual Edits
+            stockNumber: updatedVehicle.stockNumber,
+            year: updatedVehicle.year,
+            make: updatedVehicle.make,
+            model: updatedVehicle.model,
+            trim: updatedVehicle.trim,
             retail: updatedVehicle.retail,
             mileage: updatedVehicle.mileage,
             imageUrls: updatedVehicle.imageUrls,
             comments: updatedVehicle.comments,
+            websiteNotes: updatedVehicle.websiteNotes,
             options: updatedVehicle.options,
             engine: updatedVehicle.engine,
             transmission: updatedVehicle.transmission,
             exteriorColor: updatedVehicle.exteriorColor,
             interiorColor: updatedVehicle.interiorColor,
             marketPrice: updatedVehicle.marketPrice,
+            // Meta
             lastUpdated: Date.now()
         };
 
+        // Sanitize undefined -> null for Firestore
         Object.keys(enhancementData).forEach(key => {
             if (enhancementData[key] === undefined) enhancementData[key] = null;
         });
@@ -292,11 +303,13 @@ const InventoryManager = () => {
             console.log("Saving to Firestore:", vin, enhancementData);
             await setDoc(doc(db, 'vehicle_enhancements', vin), enhancementData, { merge: true });
 
+            // Optimistic Update
             setVehicles(prevVehicles => prevVehicles.map(v =>
                 v.vin === vin ? { ...v, ...enhancementData } : v
             ));
 
             setEditingVehicle(null);
+            alert("✅ SUCCESS: Vehicle Data Saved to Cloud!");
         } catch (e) {
             console.error("Error saving to Firestore", e);
             alert(`YOUR SAVE FAILED:\n${e.message}\n\nCheck your internet connection or API Keys.`);
