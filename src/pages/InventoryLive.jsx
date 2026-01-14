@@ -16,30 +16,47 @@ import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
 const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
 
 const parseCSV = (csv) => {
-    const lines = csv.trim().split('\n');
+    // Robust CSV Parser that handles quoted commas and newlines correctly
+    const lines = csv.trim().split(/\r?\n/);
+    if (lines.length === 0) return [];
+
     const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
 
-    if (!csv) return [];
+    const result = [];
 
-    return lines.slice(1).filter(line => line.trim() !== '').map(line => {
-        // Handle CSV parsing with potential commas inside quotes
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // Regex to match CSV fields: quoted OR non-quoted
+        const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+
+        // Simpler Split for well-formed files, but tolerant of internal commas
+        // actually, a manual char-by-char parse is safest for "15, Ram" type issues
         const values = [];
         let current = '';
         let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-            if (line[i] === '"') inQuotes = !inQuotes;
-            else if (line[i] === ',' && !inQuotes) {
-                values.push(current.trim());
+
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                values.push(current.trim().replace(/^"|"$/g, '')); // Push and clean quotes
                 current = '';
             } else {
-                current += line[i];
+                current += char;
             }
         }
-        values.push(current.trim());
+        values.push(current.trim().replace(/^"|"$/g, '')); // Last value
 
-        const get = (h) => (values[headers.indexOf(h)] || "").replace(/"/g, '').trim();
+        // Map to headers
+        const get = (h) => {
+            const idx = headers.indexOf(h);
+            return (values[idx] || "").trim();
+        };
 
-        return {
+        result.push({
             vin: get("Vehicle Vin"),
             stockNumber: get("Stock Number"),
             make: get("Vehicle Make"),
@@ -50,7 +67,7 @@ const parseCSV = (csv) => {
             retail: get("Retail").replace(/[^0-9.]/g, ''),
             cost: get("Cost"),
             youtubeUrl: get("YouTube URL"),
-            imageUrls: get("Image URL").split('|'),
+            imageUrls: get("Image URL") ? get("Image URL").split('|') : [],
             comments: get("Comments"),
             options: get("Option List"),
             type: get("Vehicle Type"),
@@ -59,8 +76,9 @@ const parseCSV = (csv) => {
             exteriorColor: get("Exterior Color"),
             interiorColor: get("Interior Color"),
             marketPrice: get("Market Value")
-        };
-    });
+        });
+    }
+    return result;
 };
 
 const InventoryLive = () => {
@@ -110,7 +128,7 @@ const InventoryLive = () => {
         // Staff Auth Check
         if (localStorage.getItem('highlife_staff_auth') === 'true') {
             setIsAuthenticated(true);
-            setViewMode('manager');
+            // setViewMode('manager'); // Removed auto-redirect so you can see customer view
         }
     }, []);
 
