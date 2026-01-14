@@ -100,23 +100,20 @@ const InteractiveGrader = ({ gradeData }) => {
             return;
         }
 
-        const finalScore = totalWeightedScore / totalPossibleWeight;
+        const roundedScore = parseFloat(finalScore.toFixed(1));
 
-        // Map 0-5 to Letter (User Rubric: A+ 4.8+, A 4.4+, A- 4.0+)
+        // Map 0-5 to Letter (User Rubric: 2.x=C, 3.x=B, 4.x=A)
         let letter = 'F';
-        if (finalScore >= 4.8) letter = 'A+';
-        else if (finalScore >= 4.4) letter = 'A';
-        else if (finalScore >= 4.0) letter = 'A-';
-        else if (finalScore >= 3.8) letter = 'B+';
-        else if (finalScore >= 3.4) letter = 'B';
-        else if (finalScore >= 3.0) letter = 'B-';
-        else if (finalScore >= 2.8) letter = 'C+';
-        else if (finalScore >= 2.4) letter = 'C';
-        else if (finalScore >= 2.0) letter = 'C-';
-        else if (finalScore >= 1.0) letter = 'D';
+        if (roundedScore >= 4.8) letter = 'A+';
+        else if (roundedScore >= 4.0) letter = 'A'; // 4.0 - 4.7
+        else if (roundedScore >= 3.8) letter = 'B+';
+        else if (roundedScore >= 3.0) letter = 'B'; // 3.0 - 3.7
+        else if (roundedScore >= 2.8) letter = 'C+';
+        else if (roundedScore >= 2.0) letter = 'C'; // 2.0 - 2.7
+        else if (roundedScore >= 1.0) letter = 'D'; // 1.0 - 1.9
 
         setPersonal({
-            score: finalScore.toFixed(1),
+            score: roundedScore.toFixed(1),
             letter
         });
 

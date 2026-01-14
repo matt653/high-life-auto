@@ -42,29 +42,36 @@ export const analyzeVehicle = async (vehicle) => {
     **GRADING RUBRIC (0.0 - 5.0 GPA Scale)**:
     Calculate the 'Overall Score' as an AVERAGE of these 7 categories.
     
-    **GLOBAL RULE - NO DOUBLE JEOPARDY**: 
-    - Do NOT deduct for Mileage in 'Reliability', 'Body', or 'Minor Mechanical'. 
-    - Mileage is judged ONLY in the 'Miles' category.
-    - Start every category at **5.0** and deduct **ONLY** for proven facts (video evidence, dealer notes).
-    - If information is missing, **ASSUME PERFECTION (5.0)**.
+    **GLOBAL RULE - INNOCENT UNTIL PROVEN GUILTY**: 
+    - **Start at 5.0** for every category.
+    - **ABSOLUTELY FORBIDDEN**: Deducting for "potential risks", "likely issues due to age", or "general wear".
+    - **Deduct ONLY for CONFIRMED facts**: (e.g., "Host said transmission slips" = Deduct. "Car is old so transmission might slip" = DO NOT DEDUCT).
+    - If the video/text is silent on a topic, **YOU MUST GIVE A 5.0**.
     
+    **LETTER GRADE RUBRIC**:
+    - **A**: 4.0 - 5.0 (Excellent)
+    - **B**: 3.0 - 3.9 (Good)
+    - **C**: 2.0 - 2.9 (Average / Pass)
+    - **D**: 1.0 - 1.9 (Below Average)
+    - **F**: 0.0 - 0.9 (Fail)
+
     1. **Age/Demand**: 
        - JUDGE SOLELY BASED ON Year/Make/Model. 
        - Do NOT consider miles here.
-       - High demand/Modern = 5.0.
+       - High demand/Modern = 5.0. Old/Obscure = Lower.
        
     2. **Body Condition**: 
        - Start at 5.0. Deduct ONLY for specific visible flaws (dents, rust, tears) seen in video/photos.
        
     3. **Reliability**:
        - Start at 5.0 (Assume Engine/Trans/Frame are perfect).
-       - Deduct **ONLY** if the host explicitly mentions a mechanical flaw (e.g. "transmission slips", "check engine light").
-       - **Do NOT speculate**. If the video is silent on mechanics, assume it runs perfectly.
+       - If video/notes do NOT mention a mechanical issue, **SCORE 5.0**.
+       - Deduct **ONLY** if the host explicitly mentions a mechanical flaw.
        
     4. **Minor Mechanical**: 
        - Start at 5.0.
-       - Deduct ONLY if specific items are broken (e.g. "AC doesn't work", "cracked windshield").
-       - If not mentioned, assume 5.0.
+       - If silent on AC/Windows/Radio -> **SCORE 5.0**.
+       - Deduct ONLY if explicitly stated as broken.
        
     5. **Miles**:
        - **THIS** is the only place to grade mileage.
@@ -72,7 +79,7 @@ export const analyzeVehicle = async (vehicle) => {
        
     6. **Title & History**:
        - Clean Title = 5.0.
-       - Deduct for Salvage/Rebuilt/Lemon (unless very old vehicle where it matters less).
+       - Deduct for Salvage/Rebuilt/Lemon.
     
     7. **Value**:
        - Compare Price ($${vehicle.retail}) vs Approx Market Value.
