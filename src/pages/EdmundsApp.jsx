@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 
 const EdmundsApp = () => {
-    const [activeTab, setActiveTab] = useState('valuation');
+    const [activeTab, setActiveTab] = useState('decoder');
     const [apiKey, setApiKey] = useState('');
 
     // Shared Inputs
+    const [vin, setVin] = useState('');
     const [year, setYear] = useState('2013');
     const [make, setMake] = useState('acura');
     const [model, setModel] = useState('ilx');
@@ -35,7 +36,10 @@ const EdmundsApp = () => {
         try {
             let url = '';
 
-            if (activeTab === 'valuation') {
+            if (activeTab === 'decoder') {
+                // VIN Decode Endpoint
+                url = `https://api.edmunds.com/api/vehicle/v3/vins/${vin}?fmt=json&api_key=${apiKey}`;
+            } else if (activeTab === 'valuation') {
                 url = `https://api.edmunds.com/api/v2/usedtmv/getalltmvbands?styleid=${styleId}&zip=${zip}&fmt=json&api_key=${apiKey}`;
             } else if (activeTab === 'maintenance') {
                 url = `https://api.edmunds.com/v1/api/maintenance/actionrepository/findbymodelyearid?modelyearid=${modelYearId}&fmt=json&api_key=${apiKey}`;
@@ -52,6 +56,24 @@ const EdmundsApp = () => {
 
             const data = await response.json();
             setResult(data);
+
+            // Auto-Fill from Decoder
+            if (activeTab === 'decoder' && data) {
+                if (data.years && data.years.length > 0) {
+                    const y = data.years[0];
+                    setYear(y.year.toString());
+
+                    if (y.styles && y.styles.length > 0) {
+                        const s = y.styles[0];
+                        setStyleId(s.id.toString());
+                        // Model Year ID is often hard to find directly, but sometimes it is y.id
+                        setModelYearId(y.id.toString());
+                    }
+                }
+                if (data.make) setMake(data.make.niceName);
+                if (data.model) setModel(data.model.niceName);
+            }
+
         } catch (err) {
             console.error("Edmunds API Error:", err);
             setError(err.message);
@@ -84,7 +106,13 @@ const EdmundsApp = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-8 border-b border-gray-200">
+                <div className="flex gap-2 mb-8 border-b border-gray-200 overflow-x-auto">
+                    <button
+                        onClick={() => { setActiveTab('decoder'); resetState(); }}
+                        className={`pb-3 px-4 font-semibold text-sm transition-colors border-b-2 ${activeTab === 'decoder' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                    >
+                        🔍 VIN Decoder
+                    </button>
                     <button
                         onClick={() => { setActiveTab('valuation'); resetState(); }}
                         className={`pb-3 px-4 font-semibold text-sm transition-colors border-b-2 ${activeTab === 'valuation' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
@@ -110,6 +138,14 @@ const EdmundsApp = () => {
 
                     {/* Controls Column */}
                     <div className="md:col-span-1 space-y-6">
+                        {activeTab === 'decoder' && (
+                            <div>
+                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Vehicle VIN</label>
+                                <input type="text" value={vin} onChange={(e) => setVin(e.target.value)} className="w-full p-2 border rounded" placeholder="17-digit VIN" />
+                                <p className="text-xs text-gray-400 mt-2">Decodes specs and auto-fills IDs for other tools.</p>
+                            </div>
+                        )}
+
                         {activeTab === 'valuation' && (
                             <>
                                 <div>
@@ -123,6 +159,7 @@ const EdmundsApp = () => {
                             </>
                         )}
 
+                        {/* Maintenance and Safety Inputs remain same, implicit in their tabs logic above but condensed here for brevity if they didn't change logic */}
                         {activeTab === 'maintenance' && (
                             <div>
                                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Model Year ID</label>
@@ -176,7 +213,30 @@ const EdmundsApp = () => {
                             <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 animate-fade-in">
                                 <h2 className="text-sm font-bold uppercase text-gray-500 mb-4 tracking-wider border-b pb-2">Results</h2>
 
-                                {/* Custom Views based on active tab */}
+                                {activeTab === 'decoder' && (
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                            <h3 className="text-green-800 font-bold text-lg">
+                                                {result.years?.[0]?.year} {result.make?.name} {result.model?.name}
+                                            </h3>
+                                            <div className="text-green-600 text-sm mt-1">
+                                                IDs Auto-Filled! Switch to Valuation or Maintenance tabs.
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div className="bg-white p-3 rounded border">
+                                                <span className="block text-xs text-gray-500 uppercase">Style ID</span>
+                                                <span className="font-mono font-bold">{styleId}</span>
+                                            </div>
+                                            <div className="bg-white p-3 rounded border">
+                                                <span className="block text-xs text-gray-500 uppercase">Model Year ID</span>
+                                                <span className="font-mono font-bold">{modelYearId}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Valuation view */}
                                 {activeTab === 'valuation' && (
                                     <div className="text-center py-4">
                                         <p className="text-gray-500 mb-2">Used TMV® Retail Base Price (Outstanding)</p>
