@@ -51,10 +51,11 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
 
     return (
         <div className="ag-modal-overlay">
-            <div className="ag-modal-content">
+            {/* Modal Container with Fixed Height and Hidden Overflow for scrolling inner content */}
+            <div className="ag-modal-content" style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh', overflow: 'hidden' }}>
 
-                {/* Header */}
-                <div className="ag-modal-header">
+                {/* Header - Fixed at Top */}
+                <div className="ag-modal-header" style={{ flexShrink: 0 }}>
                     <div>
                         <h2 className="ag-modal-title">
                             <span className="ag-tag-editor">Editor</span>
@@ -66,23 +67,12 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                             <span>Stock: {formData.stockNumber}</span>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <button onClick={onClose} className="ag-btn-cancel">Cancel</button>
-                        <button
-                            onClick={() => {
-                                alert("DEBUG: Editor Button Clicked. Sending data...");
-                                console.log("Saving formData...", formData);
-                                onSave(formData);
-                            }}
-                            className="ag-btn-primary"
-                        >
-                            Save Changes
-                        </button>
-                    </div>
+                    {/* Close Button X */}
+                    <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
                 </div>
 
-                {/* Layout */}
-                <div className="ag-layout-split">
+                {/* Scrollable Body Section */}
+                <div className="ag-layout-split" style={{ flex: 1, overflowY: 'auto', paddingBottom: '2rem' }}>
 
                     {/* Left Column: Data Input */}
                     <div className="ag-col-left">
@@ -220,7 +210,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                         {/* Content Area */}
                         <div className="ag-scroll-content">
                             {activeTab === 'ai' && (
-                                <div style={{ maxWidth: '48rem', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                                     {/* Generated Description Editor */}
                                     <div className="ag-card">
@@ -279,9 +269,6 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                 <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#6b7280', textTransform: 'uppercase' }}>GPA Score</div>
                                                 <div style={{ fontSize: '1.875rem', fontWeight: '900', color: '#1f2937' }}>{formData.aiGrade.overallScore}</div>
                                             </div>
-                                            <div className="ag-grade-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <button onClick={() => setActiveTab('details')} style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}>Edit Report Card &rarr;</button>
-                                            </div>
                                         </div>
                                     )}
 
@@ -300,15 +287,13 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                             </ul>
                                         </div>
                                     )}
-
                                 </div>
                             )}
 
                             {activeTab === 'details' && (
-                                <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                     {formData.aiGrade ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
+                                        <>
                                             {/* Editable Header Section */}
                                             <div style={{ background: 'linear-gradient(to bottom right, #1e3a8a, #312e81)', borderRadius: '1rem', padding: '1.5rem', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -416,7 +401,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                     </div>
                                                 ))}
                                             </div>
-                                        </div>
+                                        </>
                                     ) : (
                                         <div style={{ height: '16rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
                                             <p>No grading data available yet. Run the AI first.</p>
@@ -426,6 +411,28 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* Sticky Footer - Always Visible */}
+                <div style={{
+                    padding: '1rem 2rem',
+                    borderTop: '1px solid #e2e8f0',
+                    backgroundColor: '#fff',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '1rem',
+                    flexShrink: 0
+                }}>
+                    <button onClick={onClose} className="ag-btn-cancel">Cancel</button>
+                    <button
+                        onClick={() => {
+                            console.log("Saving formData...", formData);
+                            onSave(formData);
+                        }}
+                        className="ag-btn-primary"
+                    >
+                        Save & Publish
+                    </button>
                 </div>
             </div>
         </div>

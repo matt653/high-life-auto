@@ -256,8 +256,8 @@ const InventoryLive = () => {
 
     // SAVING NOW WRITES TO FIREBASE (PUBLISH)
     const handleSaveVehicle = async (updatedVehicle) => {
-        // Debugging Feedback
-        alert("DEBUG: Parent received Save Request for VIN: " + updatedVehicle.vin);
+        // Debugging Feedback - REMOVED
+        // alert("DEBUG: Parent received Save Request for VIN: " + updatedVehicle.vin);
 
         if (!updatedVehicle.vin) {
             alert("Error: Cannot save vehicle without VIN");
@@ -284,8 +284,13 @@ const InventoryLive = () => {
         try {
             console.log("Saving to Firestore:", vin, enhancementData);
             await setDoc(doc(db, 'vehicle_enhancements', vin), enhancementData, { merge: true });
+
+            // Update local state immediately to reflect changes in the UI
+            setVehicles(prevVehicles => prevVehicles.map(v =>
+                v.vin === vin ? { ...v, ...enhancementData } : v
+            ));
+
             setEditingVehicle(null);
-            alert("✅ Saved & Published Successfully!");
         } catch (e) {
             console.error("Error saving to Firestore", e);
             alert(`YOUR SAVE FAILED:\n${e.message}\n\nCheck your internet connection or API Keys.`);
