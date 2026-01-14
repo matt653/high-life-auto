@@ -59,17 +59,56 @@ const parseCSV = (csv) => {
 const InteractiveGrader = ({ gradeData }) => {
     const [userWeights, setUserWeights] = useState({});
     const [personal, setPersonal] = useState({ score: '0.0', letter: 'N/A' });
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
 
     // Initialize weights
     useEffect(() => {
         if (gradeData?.categories) {
+            const keys = Object.keys(gradeData.categories);
             const initial = {};
-            // Default 50% importance for all categories
-            Object.keys(gradeData.categories).forEach(k => initial[k] = 50);
+            // Divide 100% among categories (e.g., 4 categories = 25% each)
+            const split = Math.floor(100 / keys.length);
+            const remainder = 100 - (split * keys.length);
+
+            keys.forEach((k, i) => {
+                initial[k] = split + (i === 0 ? remainder : 0);
+            });
             setUserWeights(initial);
         }
     }, [gradeData]);
+
+    const handleSliderChange = (key, newValue) => {
+        setUserWeights(prev => {
+            const oldValue = prev[key];
+            const diff = newValue - oldValue;
+            if (diff === 0) return prev;
+
+            const next = { ...prev, [key]: newValue };
+            const keys = Object.keys(prev);
+            const otherKeys = keys.filter(k => k !== key);
+
+            // Distribute the negative difference among others
+            // If I increase this by 10, total of others must decrease by 10
+            const totalOtherWeight = otherKeys.reduce((sum, k) => sum + prev[k], 0);
+
+            otherKeys.forEach(k => {
+                const share = totalOtherWeight > 0 ? (prev[k] / totalOtherWeight) : (1 / otherKeys.length);
+                // We subtract the diff proportionally
+                // Example: diff = +10. We subtract 10 from others.
+                let adjustment = Math.round(diff * share);
+
+                next[k] = Math.max(0, prev[k] - adjustment);
+            });
+
+            // Force Sum to 100 (Correction for rounding)
+            const newTotal = Object.values(next).reduce((a, b) => a + b, 0);
+            if (newTotal !== 100 && otherKeys.length > 0) {
+                const error = 100 - newTotal;
+                next[otherKeys[0]] += error; // Dump error into first available bin
+            }
+            return next;
+        });
+    };
 
     // Calculate Personal Grade
     useEffect(() => {
@@ -160,19 +199,19 @@ const InteractiveGrader = ({ gradeData }) => {
                                 <div key={key}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', color: '#64748b' }}>
                                         <span>{cat.name || key.replace(/_/g, ' ')}</span>
-                                        <span>{userWeights[key] || 50}% Importance</span>
+                                        <span style={{ color: userWeights[key] > 0 ? '#0f172a' : '#94a3b8' }}>{userWeights[key] || 0}%</span>
                                     </div>
                                     <input
                                         type="range"
                                         min="0"
                                         max="100"
-                                        value={userWeights[key] || 50}
-                                        onChange={(e) => setUserWeights(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
+                                        value={userWeights[key] || 0}
+                                        onChange={(e) => handleSliderChange(key, parseInt(e.target.value))}
                                         style={{ width: '100%', accentColor: '#2563eb', cursor: 'pointer' }}
                                     />
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                                        <span>Don't Care</span>
-                                        <span>Critical</span>
+                                        <span>0%</span>
+                                        <span>100%</span>
                                     </div>
                                 </div>
                             ))}
