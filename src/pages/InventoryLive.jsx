@@ -8,6 +8,10 @@ import VehicleEditor from '../components/AutoGrader/VehicleEditor';
 import { RAW_VEHICLE_CSV } from '../components/AutoGrader/constants';
 import '../components/AutoGrader/AutoGrader.css';
 
+// Firebase Imports
+import { db, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
+import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
+
 // Default CSV URL provided in the original tool
 const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
 
