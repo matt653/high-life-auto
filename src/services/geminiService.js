@@ -108,49 +108,56 @@ export const analyzeVehicle = async (vehicle) => {
     Return a JSON object containing the 'grade' object, a 'marketingDescription' string, and a 'blemishes' array.
   `;
 
-    const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        // tools: [{ googleSearch: {} }], // Temporarily disabled to ensure stability with basic model
-        generationConfig: {
-            temperature: 0.2,
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: "OBJECT",
-                properties: {
-                    marketingDescription: { type: "STRING" },
-                    blemishes: {
-                        type: "ARRAY",
-                        items: { type: "STRING" },
-                    },
-                    grade: {
-                        type: "OBJECT",
-                        properties: {
-                            overallScore: { type: "NUMBER" },
-                            overallGrade: { type: "STRING" },
-                            summary: { type: "STRING" },
-                            categories: {
-                                type: "OBJECT",
-                                properties: {
-                                    body_condition: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
-                                    reliability: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
-                                    age_demand: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
-                                    minor_mechanical: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
-                                    miles: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
-                                    title_history: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
-                                    value: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
-                                },
-                                required: ["body_condition", "reliability", "age_demand", "minor_mechanical", "miles", "title_history", "value"]
-                            },
+    try {
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            // Enable Google Search so it can watch the video
+            tools: [{ googleSearch: {} }],
+            generationConfig: {
+                temperature: 0.2,
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        marketingDescription: { type: "STRING" },
+                        blemishes: {
+                            type: "ARRAY",
+                            items: { type: "STRING" },
                         },
-                        required: ["overallScore", "overallGrade", "summary", "categories"]
+                        grade: {
+                            type: "OBJECT",
+                            properties: {
+                                overallScore: { type: "NUMBER" },
+                                overallGrade: { type: "STRING" },
+                                summary: { type: "STRING" },
+                                categories: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        body_condition: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                        reliability: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                        age_demand: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                        minor_mechanical: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                        miles: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                        title_history: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                        value: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } } },
+                                    },
+                                    required: ["body_condition", "reliability", "age_demand", "minor_mechanical", "miles", "title_history", "value"]
+                                },
+                            },
+                            required: ["overallScore", "overallGrade", "summary", "categories"]
+                        },
                     },
+                    required: ["marketingDescription", "grade", "blemishes"]
                 },
-                required: ["marketingDescription", "grade", "blemishes"]
             },
-        },
-    });
+        });
 
-    const response = await result.response;
-    const text = response.text().replace(/```json|```/g, '').trim();
-    return JSON.parse(text);
+        const response = await result.response;
+        const text = response.text().replace(/```json|```/g, '').trim();
+        return JSON.parse(text);
+
+    } catch (error) {
+        console.error("Gemini AI API Error details:", error);
+        throw new Error(`AI Service Failed: ${error.message || error}`);
+    }
 };
