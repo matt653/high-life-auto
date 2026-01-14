@@ -387,16 +387,7 @@ const InventoryLive = () => {
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
-                                        <button
-                                            onClick={handleDealerLogin}
-                                            style={{
-                                                background: 'none', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer',
-                                                padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#999', display: 'flex', alignItems: 'center', gap: '0.25rem'
-                                            }}
-                                            title="Manager Access"
-                                        >
-                                            <Lock size={12} /> Staff Login
-                                        </button>
+
                                     </div>
                                     <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <AlertCircle size={16} color="var(--color-accent)" />

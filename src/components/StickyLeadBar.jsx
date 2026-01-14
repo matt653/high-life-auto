@@ -48,6 +48,21 @@ const StickyLeadBar = () => {
                 <Bell size={20} />
                 Get Alerts
             </button>
+            <a href="tel:+13092677200" style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                backgroundColor: '#2563eb',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                borderLeft: '1px solid rgba(255,255,255,0.2)'
+            }}>
+                <MessageCircle size={18} />
+                Miriam
+            </a>
             <style>{`
                 .mobile-only-bar { display: none !important; }
                 @media (max-width: 768px) {
