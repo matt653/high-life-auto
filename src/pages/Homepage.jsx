@@ -32,7 +32,24 @@ const Homepage = () => {
                 position: 'relative',
                 overflow: 'hidden'
             }}>
-                <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+                {/* Construction Warning Banner */}
+                <div style={{
+                    backgroundColor: '#fbbf24', // Amber-400
+                    color: '#000',
+                    padding: '0.75rem',
+                    fontWeight: 'bold',
+                    position: 'absolute',
+                    top: 0,
+                    width: '100%',
+                    zIndex: 10,
+                    fontSize: '0.9rem',
+                    borderBottom: '2px solid #b45309'
+                }}>
+                    🚧 WEBSITE UNDER RENOVATION 🚧 <br className="md:hidden" />
+                    We are building a new experience! If you have any trouble, call or text <a href="tel:512-555-0199" style={{ textDecoration: 'underline', color: '#000' }}>Miriam</a> for immediate help.
+                </div>
+
+                <div className="container" style={{ position: 'relative', zIndex: 2, marginTop: '2rem' }}>
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

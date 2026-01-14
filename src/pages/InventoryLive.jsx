@@ -296,6 +296,7 @@ const InventoryLive = () => {
         if (password === "Highlife8191!") {
             setIsAuthenticated(true);
             setViewMode('manager');
+            localStorage.setItem('highlife_staff_auth', 'true'); // Persist Login
             alert("Authenticated! Welcome to the Back Office.");
         } else {
             alert("Incorrect password.");
