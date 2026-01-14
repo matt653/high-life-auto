@@ -65,6 +65,12 @@ function Sync-Files {
 
 Log-Message "Multi-Sync Agent Started. Schedule: 6:00 AM, 2:00 PM, 6:00 PM."
 
+# Run immediately on startup
+Log-Message "Performing initial startup sync..."
+foreach ($dest in $destinations) {
+    Sync-Files -targetDir $dest
+}
+
 # Infinite loop
 while ($true) {
     try {
