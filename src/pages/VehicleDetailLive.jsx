@@ -56,82 +56,143 @@ const parseCSV = (csv) => {
 
 const InteractiveGrader = ({ gradeData }) => {
     const [userWeights, setUserWeights] = useState({});
-    const [finalScore, setFinalScore] = useState(0);
+    const [personal, setPersonal] = useState({ score: '0.0', letter: 'N/A' });
+    const [isExpanded, setIsExpanded] = useState(false);
 
+    // Initialize weights
     useEffect(() => {
         if (gradeData?.categories) {
             const initial = {};
-            Object.keys(gradeData.categories).forEach(k => initial[k] = 100);
+            // Default 50% importance for all categories
+            Object.keys(gradeData.categories).forEach(k => initial[k] = 50);
             setUserWeights(initial);
         }
     }, [gradeData]);
 
+    // Calculate Personal Grade
     useEffect(() => {
         if (!gradeData?.categories) return;
-        let totalWeightedScore = 0;
-        let totalMaxWeight = 0;
 
-        Object.keys(gradeData.categories).forEach(key => {
-            const cat = gradeData.categories[key];
-            const score = cat.score || 0;
-            const weight = userWeights[key] || 0;
+        let totalWeightedScore = 0;
+        let totalPossibleWeight = 0;
+
+        Object.entries(gradeData.categories).forEach(([key, cat]) => {
+            const weight = userWeights[key] || 50;
+
+            // Normalize score to 0-5 scale
+            let score = 2.5; // default C
+            if (typeof cat.score === 'number') {
+                score = cat.score;
+                // Handle legacy 0-100 scores if present
+                if (score > 5) score = score / 20;
+            } else if (cat.grade === 'A') score = 4.5;
+            else if (cat.grade === 'B') score = 3.5;
+            else if (cat.grade === 'C') score = 2.5;
+            else if (cat.grade === 'D') score = 1.5;
+            else if (cat.grade === 'F') score = 0.5;
+
             totalWeightedScore += (score * weight);
-            totalMaxWeight += weight;
+            totalPossibleWeight += weight;
         });
 
-        const s = totalMaxWeight > 0 ? (totalWeightedScore / totalMaxWeight) : 0;
-        setFinalScore(Math.round(s));
-    }, [userWeights, gradeData]);
+        if (totalPossibleWeight === 0) {
+            setPersonal({ score: '0.0', letter: 'N/A' });
+            return;
+        }
 
-    const getGradeLetter = (s) => {
-        if (s >= 97) return "A+";
-        if (s >= 93) return "A";
-        if (s >= 90) return "A-";
-        if (s >= 87) return "B+";
-        if (s >= 83) return "B";
-        if (s >= 80) return "B-";
-        if (s >= 77) return "C+";
-        if (s >= 73) return "C";
-        if (s >= 70) return "C-";
-        if (s >= 65) return "D";
-        return "F";
-    };
+        const finalScore = totalWeightedScore / totalPossibleWeight;
+
+        // Map 0-5 to Letter (User Rubric: A+ 4.8+, A 4.4+, A- 4.0+)
+        let letter = 'F';
+        if (finalScore >= 4.8) letter = 'A+';
+        else if (finalScore >= 4.4) letter = 'A';
+        else if (finalScore >= 4.0) letter = 'A-';
+        else if (finalScore >= 3.8) letter = 'B+';
+        else if (finalScore >= 3.4) letter = 'B';
+        else if (finalScore >= 3.0) letter = 'B-';
+        else if (finalScore >= 2.8) letter = 'C+';
+        else if (finalScore >= 2.4) letter = 'C';
+        else if (finalScore >= 2.0) letter = 'C-';
+        else if (finalScore >= 1.0) letter = 'D';
+
+        setPersonal({
+            score: finalScore.toFixed(1),
+            letter
+        });
+
+    }, [userWeights, gradeData]);
 
     if (!gradeData?.categories) return null;
 
     return (
-        <div style={{ marginTop: '3rem', padding: '2rem', backgroundColor: '#f0f9ff', border: '2px dashed #0ea5e9', borderRadius: '1rem' }}>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0369a1', margin: 0 }}>TRY IT YOURSELF</h3>
-                <p style={{ color: '#0c4a6e' }}>Don't agree with our priorities? Adjust the sliders to see what this car is worth <strong>to you</strong>.</p>
+        <div style={{ marginTop: '3rem', padding: '0', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '0.5rem', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+            <div
+                style={{
+                    padding: '1rem',
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                        Try It Yourself: Interactive Grading Scale
+                    </h3>
+                </div>
+                <span style={{ fontSize: '1.5rem', color: '#94a3b8' }}>{isExpanded ? '−' : '+'}</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {Object.entries(gradeData.categories).map(([key, cat]) => (
-                        <div key={key}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                                <span style={{ textTransform: 'uppercase' }}>{cat.name || key} (Grade: {cat.grade})</span>
-                                <span style={{ color: '#0ea5e9' }}>{userWeights[key] || 0}% Importance</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={userWeights[key] || 0}
-                                onChange={(e) => setUserWeights(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
-                                style={{ width: '100%', accentColor: '#0ea5e9' }}
-                            />
+            {isExpanded && (
+                <div style={{ padding: '1.5rem' }}>
+                    <p style={{ color: '#475569', marginBottom: '2rem', fontSize: '0.9rem' }}>
+                        Adjust the sliders to change how much each category matters to <strong>YOU</strong>.
+                        Don't care about curb appeal? Slide "Body Condition" down. Care a lot about reliability? Slide it up!
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                        {/* Sliders */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {Object.entries(gradeData.categories).map(([key, cat]) => (
+                                <div key={key}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', color: '#64748b' }}>
+                                        <span>{cat.name || key.replace(/_/g, ' ')}</span>
+                                        <span>{userWeights[key] || 50}% Importance</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={userWeights[key] || 50}
+                                        onChange={(e) => setUserWeights(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
+                                        style={{ width: '100%', accentColor: '#2563eb', cursor: 'pointer' }}
+                                    />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                        <span>Don't Care</span>
+                                        <span>Critical</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', textTransform: 'uppercase', color: '#0c4a6e' }}>Your Personal Grade</div>
-                    <div style={{ fontSize: '5rem', fontWeight: 900, color: '#0ea5e9', lineHeight: 1 }}>{getGradeLetter(finalScore)}</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#0284c7', opacity: 0.8 }}>{finalScore}/100</div>
+                        {/* Result Card */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#eff6ff', borderRadius: '1rem', border: '2px solid #bfdbfe', padding: '2rem' }}>
+                            <h4 style={{ color: '#1e3a8a', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.875rem', letterSpacing: '0.05em', marginBottom: '1rem' }}>Your Personal Grade</h4>
+                            <div style={{ fontSize: '6rem', fontWeight: 900, lineHeight: 1, color: '#2563eb', marginBottom: '0.5rem' }}>{personal.letter}</div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>{personal.score}</span>
+                                <span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 600 }}>/ 5.0 GPA</span>
+                            </div>
+                            <p style={{ fontSize: '0.75rem', color: '#1e40af', marginTop: '1rem', opacity: 0.8, maxWidth: '200px', textAlign: 'center' }}>
+                                Based on not just the car's condition, but your personal priorities.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

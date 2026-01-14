@@ -261,6 +261,11 @@ const InventoryLive = () => {
             return;
         }
 
+        if (!isFirebaseConfigured) {
+            alert("CANNOT SAVE: Firebase API Key is missing in .env file.\nThe app is running in Read-Only mode.");
+            return;
+        }
+
         const vin = updatedVehicle.vin.trim().toUpperCase();
 
         // Extract only the fields we want to enhance/persist
@@ -276,6 +281,7 @@ const InventoryLive = () => {
         };
 
         try {
+            console.log("Saving to Firestore:", vin, enhancementData);
             await setDoc(doc(db, 'vehicle_enhancements', vin), enhancementData, { merge: true });
             setEditingVehicle(null); // Close modal, Firestore listener will update UI
             // alert("Saved & Published!"); // Optional feedback

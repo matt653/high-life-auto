@@ -69,7 +69,10 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <button onClick={onClose} className="ag-btn-cancel">Cancel</button>
                         <button
-                            onClick={() => onSave(formData)}
+                            onClick={() => {
+                                console.log("Saving formData...", formData);
+                                onSave(formData);
+                            }}
                             className="ag-btn-primary"
                         >
                             Save Changes
@@ -272,7 +275,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                 <div style={{ fontSize: '1.875rem', fontWeight: '900', color: '#2563eb' }}>{formData.aiGrade.overallGrade}</div>
                                             </div>
                                             <div className="ag-grade-box">
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#6b7280', textTransform: 'uppercase' }}>Score</div>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#6b7280', textTransform: 'uppercase' }}>GPA Score</div>
                                                 <div style={{ fontSize: '1.875rem', fontWeight: '900', color: '#1f2937' }}>{formData.aiGrade.overallScore}</div>
                                             </div>
                                             <div className="ag-grade-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -325,7 +328,23 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                                     width: '80px'
                                                                 }}
                                                             />
-                                                            <span style={{ fontSize: '1.5rem', fontWeight: '500', color: '#93c5fd', opacity: 0.75 }}>/ 100</span>
+                                                            <span style={{ fontSize: '1.5rem', fontWeight: '500', color: '#93c5fd', opacity: 0.75 }}>GPA (0-5)</span>
+                                                            <input
+                                                                type="number"
+                                                                step="0.1"
+                                                                value={formData.aiGrade.overallScore}
+                                                                onChange={(e) => handleGradeChange('overallScore', parseFloat(e.target.value))}
+                                                                style={{
+                                                                    backgroundColor: 'transparent',
+                                                                    border: 'none',
+                                                                    borderBottom: '1px solid rgba(255,255,255,0.3)',
+                                                                    color: 'white',
+                                                                    fontSize: '1.5rem',
+                                                                    fontWeight: 'bold',
+                                                                    width: '60px',
+                                                                    marginLeft: '1rem'
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -354,7 +373,9 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                 {formData.aiGrade.categories && Object.entries(formData.aiGrade.categories).map(([key, cat]) => (
                                                     <div key={key} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                                                         <div style={{ flex: 1 }}>
-                                                            <h5 style={{ fontWeight: 'bold', color: '#111827', margin: 0, textTransform: 'capitalize' }}>{cat.name || key}</h5>
+                                                            <h5 style={{ fontWeight: 'bold', color: '#111827', margin: 0, textTransform: 'capitalize' }}>
+                                                                {cat.name ? cat.name : key.replace(/_/g, ' ')}
+                                                            </h5>
                                                             <textarea
                                                                 value={cat.reasoning}
                                                                 onChange={(e) => handleGradeChange('reasoning', e.target.value, key)}
@@ -370,14 +391,17 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
                                                                 }}
                                                             />
                                                         </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                                                            <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#6b7280' }}>Grade</label>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#6b7280' }}>Score (0-5)</label>
                                                             <input
-                                                                type="text"
-                                                                value={cat.grade}
-                                                                onChange={(e) => handleGradeChange('grade', e.target.value, key)}
+                                                                type="number"
+                                                                step="0.1"
+                                                                min="0"
+                                                                max="5"
+                                                                value={cat.score !== undefined ? cat.score : (cat.grade === 'A' ? 5 : 3)} // Fallback if old data
+                                                                onChange={(e) => handleGradeChange('score', parseFloat(e.target.value), key)}
                                                                 style={{
-                                                                    width: '3rem',
+                                                                    width: '4rem',
                                                                     textAlign: 'center',
                                                                     backgroundColor: '#f3f4f6',
                                                                     padding: '0.25rem',

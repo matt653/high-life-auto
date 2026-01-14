@@ -15,16 +15,6 @@ export const analyzeVehicle = async (vehicle) => {
     // --- Dynamic Weight Calculation for Prompt ---
     const price = parseFloat(vehicle.retail || 0);
 
-    const weights = {
-        age: "15%",
-        body: price >= 2000 ? "20%" : "10%",
-        rel: "25%",
-        minor: "15%",
-        int: price < 3000 ? "5%" : "10%",
-        hist: price > 5000 ? "10%" : "5%",
-        val: price < 3000 ? "25%" : "5%"
-    };
-
     const prompt = `
     You are the Senior Inventory Manager for "HighLife Auto". 
     Your job is to produce a strict, honest, and multi-dimensional "Report Card" for this vehicle.
@@ -47,27 +37,35 @@ export const analyzeVehicle = async (vehicle) => {
     - INTERNAL DEALER COMMENTS: ${vehicle.comments}
     - WEBSITE NOTES: ${vehicle.websiteNotes || "None"}
     
-    **GRADING RUBRIC (Strictly Weighted)**:
-    Calculate the 'Overall Score' (0-100) based on these weighted categories.
+    **NEW GRADING SYSTEM (5.0 GPA SCALE)**:
+    - Score each category from **0.0 to 5.0**.
+    - **Overall Grade** is the **AVERAGE** of the 7 category scores.
     
-    1. **Age/Demand (${weights.age})**: Market demand in our area. Is it a classic or just old? High demand = higher grade.
-    2.  **Body Condition (${weights.body})**: Curb appeal. Dents/Rust/Paint. Video is source of truth.
-    3.  **Reliability (Major) (${weights.rel})**: Proven engine/transmission/frame.
-        -   **RESOURCE**: You MUST query your knowledge of 'dashboard-light.com' context for this model's powertrain reliability vs mileage.
-        -   Example: 200k on a proven diesel is fine (B grade), but 200k on a weak 4-cyl is bad (D grade).
-    4.  **Minor Mechanical (${weights.minor})**: Accessories, wipers, brakes, suspension, radio, windows, AC.
-    5.  **Interior (${weights.int})**: Seats, carpet, headliner, panels.
-        -   Video: Look for tears or stains mentioned by Miriam.
-    6.  **History & Usage (${weights.hist})**:
-        -   Mileage context + Title History (Salvage, Flood, Lemon).
-        -   If Salvage was 10 years/100k miles ago, punishment is MINOR. If recent, punishment is MAJOR.
-    7.  **Value (${weights.val})**:
-        -   Compare Asking Price ($${vehicle.retail}) vs Typical Market Value for this specific VIN/Trim/Miles.
-        -   If we are under market value -> High Grade (A). If over -> Low Grade.
+    **LETTER GRADE RUBRIC**:
+    - **A+**: 4.8 - 5.0
+    - **A** : 4.4 - 4.7
+    - **A-**: 4.0 - 4.3
+    - **B+**: 3.8 - 3.9
+    - **B** : 3.4 - 3.7
+    - **B-**: 3.0 - 3.3
+    - **C+**: 2.8 - 2.9
+    - **C** : 2.4 - 2.7
+    - **C-**: 2.0 - 2.3
+    - **D** : 1.0 - 1.9
+    - **F** : 0.0 - 0.9
+
+    **THE 7 GRADING CATEGORIES**:
+    1. **Body Condition**: Overall appearance, paint, dents, rust (AI Graded based on video).
+    2. **Reliability**: Average of 3 components: Engine, Transmission, Frame. Use "Dashboard-Light" logic.
+    3. **Age & Demand**: Curb appeal. Is it a classic? A fast seller? Or just old and crusty?
+    4. **Minor Mechanical**: Brakes, suspension, radio, windows, AC, wipers.
+    5. **Miles**: Longevity context. Does this engine run forever? Or is 80k miles the limit?
+    6. **Title & History**: Context of events. Old salvage vs new salvage. Lemon buyback?
+    7. **Value**: Risk vs Reward. compare asking price to market value.
 
     **TASKS**:
     1. **Analyze Video/Audio**: Extract honest positives and negatives.
-    2. **Calculate Grades**: Fill the 7 categories above.
+    2. **Calculate Grades**: Fill the 7 categories (0-5 scale). Calculate Average for overall.
     3. **Write Copy**: Generate a 'Marketing Description' for the website.
        - **Reference the video directly**: "In the test drive, Miriam noted..." 
        - **CONSTRAINT**: Do NOT mention the Stock Number.
@@ -97,16 +95,12 @@ export const analyzeVehicle = async (vehicle) => {
                         grade: {
                             type: "OBJECT",
                             properties: {
-                                overallScore: { type: "NUMBER" },
-                                overallGrade: { type: "STRING" },
+                                overallScore: { type: "NUMBER" }, // 0.0 to 5.0
+                                overallGrade: { type: "STRING" }, // A+, A, etc.
                                 summary: { type: "STRING" },
                                 categories: {
-                                    type: "OBJECT", // 7 Categories
+                                    type: "OBJECT",
                                     properties: {
-                                        age_demand: {
-                                            type: "OBJECT",
-                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
-                                        },
                                         body_condition: {
                                             type: "OBJECT",
                                             properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
@@ -115,24 +109,28 @@ export const analyzeVehicle = async (vehicle) => {
                                             type: "OBJECT",
                                             properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
+                                        age_demand: {
+                                            type: "OBJECT",
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
+                                        },
                                         minor_mechanical: {
                                             type: "OBJECT",
                                             properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
-                                        interior: {
+                                        miles: {
                                             type: "OBJECT",
                                             properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
-                                        road_history: {
+                                        title_history: {
                                             type: "OBJECT",
                                             properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
-                                        value_grade: {
+                                        value: {
                                             type: "OBJECT",
                                             properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         }
                                     },
-                                    required: ["age_demand", "body_condition", "reliability", "minor_mechanical", "interior", "road_history", "value_grade"]
+                                    required: ["body_condition", "reliability", "age_demand", "minor_mechanical", "miles", "title_history", "value"]
                                 }
                             },
                             required: ["overallScore", "overallGrade", "summary", "categories"]
