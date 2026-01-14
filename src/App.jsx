@@ -17,6 +17,7 @@ const Financing = lazy(() => import('./pages/Financing'));
 const Contact = lazy(() => import('./pages/Contact'));
 const AIToolsDashboard = lazy(() => import('./pages/AIToolsDashboard'));
 const ChatBotApp = lazy(() => import('./pages/ChatBotApp'));
+const EdmundsApp = lazy(() => import('./pages/EdmundsApp'));
 
 const StaffPortal = lazy(() => import('./pages/StaffPortal'));
 
@@ -47,6 +48,7 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/lab" element={<AIToolsDashboard />} />
                   <Route path="/apps/chatbot" element={<ChatBotApp />} />
+                  <Route path="/apps/edmunds" element={<EdmundsApp />} />
                   <Route path="/secure-login-8191" element={<StaffPortal />} />
                 </Routes>
               </Suspense>

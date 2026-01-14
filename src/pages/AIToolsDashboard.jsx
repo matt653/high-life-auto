@@ -25,6 +25,13 @@ const AIToolsDashboard = () => {
             color: "bg-green-500"
         },
         {
+            name: "Edmunds Toolkit",
+            path: "/apps/edmunds",
+            description: "TMV Valuation & Maintenance Schedules.",
+            color: "bg-blue-600",
+            isInternal: true
+        },
+        {
             name: "Chat Bot",
             path: "/apps/chatbot",
             description: "AI Customer Service Agent.",

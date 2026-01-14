@@ -50,25 +50,38 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
     };
 
     return (
-        <div className="ag-modal-overlay">
+        <div className="ag-modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 9999 }}>
             {/* Modal Container with Fixed Height and Hidden Overflow for scrolling inner content */}
-            <div className="ag-modal-content" style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh', overflow: 'hidden' }}>
-
+            <div className="ag-modal-content" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '80vh', // Fixed height based on viewport
+                maxHeight: '800px', // Max pixel height for really large screens
+                width: '100%',
+                maxWidth: '1200px',
+                overflow: 'hidden',
+                borderRadius: '1rem',
+                backgroundColor: 'white',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                position: 'relative' // Ensure stacking context
+            }}>
                 {/* Header - Fixed at Top */}
-                <div className="ag-modal-header" style={{ flexShrink: 0 }}>
-                    <div>
-                        <h2 className="ag-modal-title">
-                            <span className="ag-tag-editor">Editor</span>
-                            {formData.year} {formData.make} {formData.model}
-                        </h2>
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.875rem', color: '#9ca3af', fontFamily: 'monospace' }}>
-                            <span>VIN: {formData.vin}</span>
-                            <span>|</span>
-                            <span>Stock: {formData.stockNumber}</span>
+                <div className="ag-modal-header" style={{ flexShrink: 0, padding: '1rem 1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <h2 className="ag-modal-title" style={{ margin: 0, fontSize: '1.25rem' }}>
+                                <span className="ag-tag-editor" style={{ marginRight: '0.5rem' }}>Editor</span>
+                                {formData.year} {formData.make} {formData.model}
+                            </h2>
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.875rem', color: '#9ca3af', fontFamily: 'monospace' }}>
+                                <span>VIN: {formData.vin}</span>
+                                <span>|</span>
+                                <span>Stock: {formData.stockNumber}</span>
+                            </div>
                         </div>
+                        {/* Close Button X */}
+                        <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
                     </div>
-                    {/* Close Button X */}
-                    <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
                 </div>
 
                 {/* Scrollable Body Section */}

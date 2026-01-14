@@ -211,7 +211,21 @@ const VehicleDetailLive = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        loadVehicle();
+
+        // Safety Timeout to prevent infinite loading
+        const safetyTimer = setTimeout(() => {
+            setLoading(prev => {
+                if (prev) {
+                    console.warn("Vehicle Load Timed Out - Forcing Render");
+                    return false;
+                }
+                return prev;
+            });
+        }, 5000);
+
+        loadVehicle().then(() => clearTimeout(safetyTimer));
+
+        return () => clearTimeout(safetyTimer);
     }, [id]);
 
     const loadVehicle = async () => {

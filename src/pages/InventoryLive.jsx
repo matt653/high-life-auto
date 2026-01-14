@@ -315,54 +315,73 @@ const InventoryLive = () => {
                 <div className="container">
 
                     {/* Header / Mode Switcher */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
-                                <button
-                                    onClick={handleDealerLogin}
-                                    style={{
-                                        background: 'none',
-                                        border: '1px solid #ddd',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        padding: '0.25rem 0.5rem',
-                                        fontSize: '0.75rem',
-                                        color: '#999',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.25rem'
-                                    }}
-                                    title="Manager Access"
-                                >
-                                    <Lock size={12} /> Staff Login
-                                </button>
+                    <div style={{ marginBottom: '2rem' }}>
+                        {isAuthenticated ? (
+                            <div style={{ borderBottom: '1px solid #e5e7eb', display: 'flex', gap: '2rem', alignItems: 'center', paddingBottom: '0.5rem' }}>
+                                <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#111827', cursor: 'pointer' }} onClick={() => setViewMode('manager')}>
+                                    Digital Showroom
+                                </h1>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        onClick={() => setViewMode('manager')}
+                                        style={{
+                                            background: 'none', border: 'none', borderBottom: viewMode === 'manager' ? '2px solid #2563eb' : 'none',
+                                            color: viewMode === 'manager' ? '#2563eb' : '#6b7280', fontWeight: '600', padding: '0.5rem 0', cursor: 'pointer'
+                                        }}
+                                    >
+                                        Inventory Manager
+                                    </button>
+                                    <button
+                                        onClick={() => window.location.href = '/lab'}
+                                        style={{
+                                            background: 'none', border: 'none', borderBottom: 'none',
+                                            color: '#6b7280', fontWeight: '600', padding: '0.5rem 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.color = '#7c3aed'}
+                                        onMouseLeave={(e) => e.target.style.color = '#6b7280'}
+                                    >
+                                        <span style={{ fontSize: '1.25rem' }}>🧪</span> AI Labs
+                                    </button>
+                                    <button
+                                        onClick={() => performSmartSync(true)}
+                                        style={{
+                                            background: 'none', border: 'none',
+                                            color: '#059669', fontWeight: '600', padding: '0.5rem 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'
+                                        }}
+                                        disabled={isSyncing}
+                                    >
+                                        <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} /> {isSyncing ? 'Syncing...' : 'Sync Feed'}
+                                    </button>
+                                </div>
+                                <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
+                                    <button onClick={() => setViewMode('public')} className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
+                                        View as Customer
+                                    </button>
+                                </div>
                             </div>
-                            <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <AlertCircle size={16} color="var(--color-accent)" />
-                                Live inventory from Frazer DMS
-                                {lastSyncTime && ` • Synced: ${lastSyncTime}`}
-                            </p>
-                        </div>
-
-                        {/* Manager Controls - Only visible if Authenticated */}
-                        {isAuthenticated && (
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button
-                                    onClick={() => setViewMode(viewMode === 'manager' ? 'public' : 'manager')}
-                                    className="btn btn-outline"
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                >
-                                    <Settings size={18} /> {viewMode === 'manager' ? 'Switch to Public View' : 'Switch to Manager View'}
-                                </button>
-                                <button
-                                    onClick={() => performSmartSync(true)}
-                                    className="btn btn-primary"
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                    disabled={isSyncing}
-                                >
-                                    <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} /> {isSyncing ? 'Syncing...' : 'Sync Feed'}
-                                </button>
+                        ) : (
+                            /* Public / Unauthenticated Header */
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
+                                        <button
+                                            onClick={handleDealerLogin}
+                                            style={{
+                                                background: 'none', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer',
+                                                padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#999', display: 'flex', alignItems: 'center', gap: '0.25rem'
+                                            }}
+                                            title="Manager Access"
+                                        >
+                                            <Lock size={12} /> Staff Login
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <AlertCircle size={16} color="var(--color-accent)" />
+                                        Live inventory from Frazer DMS
+                                        {lastSyncTime && ` • Synced: ${lastSyncTime}`}
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
