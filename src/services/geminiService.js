@@ -12,9 +12,23 @@ export const analyzeVehicle = async (vehicle) => {
     // Use the google-genai library as intended
     const ai = new GoogleGenAI({ apiKey });
 
+    // --- Dynamic Weight Calculation for Prompt ---
+    const price = parseFloat(vehicle.retail || 0);
+
+    const weights = {
+        age: "15%",
+        body: price >= 2000 ? "20%" : "10%",
+        rel: "25%",
+        minor: "15%",
+        int: price < 3000 ? "5%" : "10%",
+        hist: price > 5000 ? "10%" : "5%",
+        val: price < 3000 ? "25%" : "5%"
+    };
+
     const prompt = `
     You are the Senior Inventory Manager for "HighLife Auto". 
-    
+    Your job is to produce a strict, honest, and multi-dimensional "Report Card" for this vehicle.
+
     CRITICAL INSTRUCTION: "LISTEN" TO THE VIDEO.
     The YouTube Test Drive video is your primary source of truth. 
     You MUST use the 'googleSearch' tool to find the video content for this specific URL: ${vehicle.youtubeUrl}
@@ -29,21 +43,37 @@ export const analyzeVehicle = async (vehicle) => {
     - Stock #: ${vehicle.stockNumber}
     - VIN: ${vehicle.vin}
     - Mileage: ${vehicle.mileage}
-    - Price: $${vehicle.retail}
+    - Asking Price: $${vehicle.retail}
     - INTERNAL DEALER COMMENTS: ${vehicle.comments}
     - WEBSITE NOTES: ${vehicle.websiteNotes || "None"}
     
-    YOUR TASKS:
-    1. **Audio/Video Analysis**: What did Miriam say? Did she say "It runs smooth"? Did she say "There is a small dent here"? 
-       - If the video description/audio contradicts the CSV data, TRUST THE VIDEO.
-    2. **Reliability Check**: Use your internal automotive knowledge to check this specific Year/Make/Model for common failure points (e.g., CVT transmission issues, timing chain guides).
-    3. **Grade**: Generate the 5-point report card.
-    4. **Write Copy**: Generate a "Marketing Description" for the website.
-       - **Reference the video directly**: "In the test drive, Miriam noted..." or "As heard in the video..."
-       - **CONSTRAINT**: Do NOT mention the Stock Number in this text.
-       - Tone: Informative, objective, helpful, and honest. Avoid "salesy" language or hype. Just facts and observations.
+    **GRADING RUBRIC (Strictly Weighted)**:
+    Calculate the 'Overall Score' (0-100) based on these weighted categories.
+    
+    1. **Age/Demand (${weights.age})**: Market demand in our area. Is it a classic or just old? High demand = higher grade.
+    2.  **Body Condition (${weights.body})**: Curb appeal. Dents/Rust/Paint. Video is source of truth.
+    3.  **Reliability (Major) (${weights.rel})**: Proven engine/transmission/frame.
+        -   **RESOURCE**: You MUST query your knowledge of 'dashboard-light.com' context for this model's powertrain reliability vs mileage.
+        -   Example: 200k on a proven diesel is fine (B grade), but 200k on a weak 4-cyl is bad (D grade).
+    4.  **Minor Mechanical (${weights.minor})**: Accessories, wipers, brakes, suspension, radio, windows, AC.
+    5.  **Interior (${weights.int})**: Seats, carpet, headliner, panels.
+        -   Video: Look for tears or stains mentioned by Miriam.
+    6.  **History & Usage (${weights.hist})**:
+        -   Mileage context + Title History (Salvage, Flood, Lemon).
+        -   If Salvage was 10 years/100k miles ago, punishment is MINOR. If recent, punishment is MAJOR.
+    7.  **Value (${weights.val})**:
+        -   Compare Asking Price ($${vehicle.retail}) vs Typical Market Value for this specific VIN/Trim/Miles.
+        -   If we are under market value -> High Grade (A). If over -> Low Grade.
+
+    **TASKS**:
+    1. **Analyze Video/Audio**: Extract honest positives and negatives.
+    2. **Calculate Grades**: Fill the 7 categories above.
+    3. **Write Copy**: Generate a 'Marketing Description' for the website.
+       - **Reference the video directly**: "In the test drive, Miriam noted..." 
+       - **CONSTRAINT**: Do NOT mention the Stock Number.
+       - Tone: Informative, objective, helpful, and honest. No "hype".
        - Formatting: HTML tags <p>, <ul>, <li>, <strong>.
-    5. **Honest Blemishes**: List specific cosmetic or mechanical flaws mentioned in the video or notes (e.g., "Scratch on rear bumper", "Tear in driver seat"). Be specific. If none, return an empty list.
+    4. **Honest Blemishes**: List specific flaws (e.g. "Scratch on bumper", "Tear in seat").
 
     OUTPUT JSON SCHEMA:
     Return a JSON object containing the 'grade' object, a 'marketingDescription' string, and a 'blemishes' array.
@@ -51,7 +81,7 @@ export const analyzeVehicle = async (vehicle) => {
 
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-exp", // Updated to a known valid model or use gemini-1.5-flash
+            model: "gemini-2.0-flash-exp",
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
@@ -71,55 +101,38 @@ export const analyzeVehicle = async (vehicle) => {
                                 overallGrade: { type: "STRING" },
                                 summary: { type: "STRING" },
                                 categories: {
-                                    type: "OBJECT",
+                                    type: "OBJECT", // 7 Categories
                                     properties: {
-                                        body: {
+                                        age_demand: {
                                             type: "OBJECT",
-                                            properties: {
-                                                name: { type: "STRING" },
-                                                score: { type: "NUMBER" },
-                                                grade: { type: "STRING" },
-                                                reasoning: { type: "STRING" }
-                                            }
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
-                                        engine: {
+                                        body_condition: {
                                             type: "OBJECT",
-                                            properties: {
-                                                name: { type: "STRING" },
-                                                score: { type: "NUMBER" },
-                                                grade: { type: "STRING" },
-                                                reasoning: { type: "STRING" }
-                                            }
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
-                                        history: {
+                                        reliability: {
                                             type: "OBJECT",
-                                            properties: {
-                                                name: { type: "STRING" },
-                                                score: { type: "NUMBER" },
-                                                grade: { type: "STRING" },
-                                                reasoning: { type: "STRING" }
-                                            }
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
-                                        mechanical: {
+                                        minor_mechanical: {
                                             type: "OBJECT",
-                                            properties: {
-                                                name: { type: "STRING" },
-                                                score: { type: "NUMBER" },
-                                                grade: { type: "STRING" },
-                                                reasoning: { type: "STRING" }
-                                            }
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         },
-                                        demand: {
+                                        interior: {
                                             type: "OBJECT",
-                                            properties: {
-                                                name: { type: "STRING" },
-                                                score: { type: "NUMBER" },
-                                                grade: { type: "STRING" },
-                                                reasoning: { type: "STRING" }
-                                            }
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
+                                        },
+                                        road_history: {
+                                            type: "OBJECT",
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
+                                        },
+                                        value_grade: {
+                                            type: "OBJECT",
+                                            properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, grade: { type: "STRING" }, reasoning: { type: "STRING" } }
                                         }
                                     },
-                                    required: ["body", "engine", "history", "mechanical", "demand"]
+                                    required: ["age_demand", "body_condition", "reliability", "minor_mechanical", "interior", "road_history", "value_grade"]
                                 }
                             },
                             required: ["overallScore", "overallGrade", "summary", "categories"]
