@@ -55,6 +55,38 @@ function Sync-Files {
             try {
                 Copy-Item -Path $file.FullName -Destination $destFile -Force
                 Log-Message "Successfully copied: $($file.Name)"
+                
+                # TRIGGER WEBSITES UPDATE (Integrated AutoPublish)
+                if ($file.Name -eq "DealerCarSearch-1.csv") {
+                    try {
+                        Log-Message "Triggering Website Update for DealerCarSearch-1.csv..."
+                        
+                        $repoRoot = "C:\Users\matt_\OneDrive\Desktop\office website folder\high-life-auto"
+                        $websiteDest = Join-Path -Path $repoRoot -ChildPath "public\frazer-inventory-updated.csv"
+                        
+                        # 1. Copy to Website Folder
+                        Copy-Item -Path $destFile -Destination $websiteDest -Force
+                        Log-Message "Copied to website repo public folder."
+                        
+                        # 2. Git Push
+                        Push-Location -Path $repoRoot
+                        if (git status --porcelain) {
+                            git add .
+                            git commit -m "Auto-update inventory $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+                            git push origin main
+                            Log-Message "SUCCESS: Pushed update to GitHub (Website will rebuild)."
+                        }
+                        else {
+                            Log-Message "No git changes detected."
+                        }
+                    }
+                    catch {
+                        Log-Message "WEBSITE UPDATE FAILED: $($_.Exception.Message)"
+                    }
+                    finally {
+                        Pop-Location
+                    }
+                }
             }
             catch {
                 Log-Message "Error copying $($file.Name): $($_.Exception.Message)"
@@ -63,12 +95,21 @@ function Sync-Files {
     }
 }
 
-Log-Message "Multi-Sync Agent Started. Schedule: 6:00 AM, 2:00 PM, 6:00 PM."
+# Helper to get 8am start time for a given date
+function Get-StartTime($d) { return $d.Date.AddHours(8) }
+
+Log-Message "Multi-Sync Agent Started. Schedule: Every 15 mins (8:00 AM - 7:00 PM, Mon-Sat)."
 
 # Run immediately on startup
-Log-Message "Performing initial startup sync..."
-foreach ($dest in $destinations) {
-    Sync-Files -targetDir $dest
+try {
+    Log-Message "Performing initial startup sync..."
+    foreach ($dest in $destinations) {
+        Sync-Files -targetDir $dest
+    }
+}
+catch {
+    Log-Message "Startup Error: $($_.Exception.Message)"
+    Read-Host "Press Enter to continue (checking schedule loop)..."
 }
 
 # Infinite loop
@@ -76,47 +117,55 @@ while ($true) {
     try {
         $now = Get-Date
         
-        # Define the daily schedule (Hours: 0-23)
-        # 6 = 6am, 14 = 2pm, 18 = 6pm
-        $scheduleHours = @(6, 14, 18) 
+        # Calculate tentative next run (15 mins from now)
+        $target = $now.AddMinutes(15)
         
-        # Find the next scheduled time
-        $target = $null
-        foreach ($h in $scheduleHours) {
-            $candidate = $now.Date.AddHours($h)
-            if ($candidate -gt $now) {
-                $target = $candidate
-                break
+        $startHour = 8
+        $endHour = 19 # 7 PM
+        
+        # 1. If currently Sunday, jump to Monday 8 AM
+        if ($target.DayOfWeek -eq 'Sunday') {
+            $target = Get-StartTime $target.AddDays(1)
+        }
+        # 2. If it's too late in the day (>= 19:00), jump to tomorrow 8 AM
+        elseif ($target.Hour -ge $endHour) {
+            $target = Get-StartTime $target.AddDays(1)
+            # If that tomorrow is Sunday, jump to Monday
+            if ($target.DayOfWeek -eq 'Sunday') {
+                $target = Get-StartTime $target.AddDays(1)
             }
         }
-
-        # If no more times today, set for 6am tomorrow
-        if ($null -eq $target) {
-            $target = $now.Date.AddDays(1).AddHours($scheduleHours[0])
+        # 3. If it's too early in the day (< 8:00), jump to today 8 AM
+        elseif ($target.Hour -lt $startHour) {
+            $target = Get-StartTime $target
+        }
+        
+        # Calculate wait time
+        $current = Get-Date
+        $secondsToWait = ($target - $current).TotalSeconds
+        
+        # Safety for negative wait
+        if ($secondsToWait -le 0) {
+            $secondsToWait = 10
+            $target = $current.AddSeconds(10)
         }
 
-        # Calculate wait time
-        $secondsToWait = ($target - $now).TotalSeconds
         $timeSpan = [timespan]::FromSeconds($secondsToWait)
-        Log-Message "Next run in $($timeSpan.Hours)h $($timeSpan.Minutes)m at $target."
+        Log-Message "Next run scheduled for $target (in $($timeSpan.Hours)h $($timeSpan.Minutes)m)"
 
         # Wait
         Start-Sleep -Seconds $secondsToWait
 
         Log-Message "Starting scheduled sync cycle..."
-
-        # Loop through all destinations
         foreach ($dest in $destinations) {
             Sync-Files -targetDir $dest
         }
-
         Log-Message "Sync cycle complete."
-        
-        # Pause briefly to prevent rapid re-triggering
-        Start-Sleep -Seconds 60 
     }
     catch {
         Log-Message "Critical Error: $($_.Exception.Message)"
         Start-Sleep -Seconds 300
     }
 }
+
+Read-Host "Script stopped. Press Enter to close..."
