@@ -325,7 +325,8 @@ const VehicleDetailLive = () => {
                                 aiGrade: liveData.aiGrade || foundCar.aiGrade,
                                 marketingDescription: liveData.marketingDescription || foundCar.marketingDescription,
                                 blemishes: liveData.blemishes || foundCar.blemishes,
-                                websiteNotes: liveData.websiteNotes || foundCar.websiteNotes
+                                websiteNotes: liveData.websiteNotes || foundCar.websiteNotes,
+                                marketPrice: liveData.marketPrice || foundCar.marketPrice
                             };
                         }
                     } catch (err) {

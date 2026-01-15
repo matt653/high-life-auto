@@ -90,7 +90,7 @@ const VehicleEditor = ({ vehicle, onSave, onClose }) => {
             // 1. Process Image Locally (WASM)
             // Use CDN for assets to avoid local serving issues with Vite/WASM
             const config = {
-                publicPath: 'https://static.img.ly/background-removal-js/v1.5.5/dist/'
+                publicPath: 'https://static.img.ly/background-removal-js/v1.7.0/dist/'
             };
 
             const blob = await removeBackground(imageUrl, config);
