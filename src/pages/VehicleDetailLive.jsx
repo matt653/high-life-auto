@@ -322,11 +322,21 @@ const VehicleDetailLive = () => {
                             // Merge Live Data
                             foundCar = {
                                 ...foundCar,
+                                // MERGE ALL FIRESTORE OVERRIDES
+                                // This ensures Price, Photos, Mileage, etc. updated in Admin appear here.
+                                ...liveData,
+                                // Keep original ID/Stock if needed, though liveData shouldn't mess it up
+                                id: foundCar.stockNumber,
+                                // Fallbacks if liveData is partial (though usually it's full object merge)
                                 aiGrade: liveData.aiGrade || foundCar.aiGrade,
                                 marketingDescription: liveData.marketingDescription || foundCar.marketingDescription,
                                 blemishes: liveData.blemishes || foundCar.blemishes,
                                 websiteNotes: liveData.websiteNotes || foundCar.websiteNotes,
-                                marketPrice: liveData.marketPrice || foundCar.marketPrice
+                                marketPrice: liveData.marketPrice || foundCar.marketPrice,
+                                imageUrls: liveData.imageUrls || foundCar.imageUrls,
+                                retail: liveData.retail || foundCar.retail,
+                                mileage: liveData.mileage || foundCar.mileage,
+                                youtubeUrl: liveData.youtubeUrl || foundCar.youtubeUrl
                             };
                         }
                     } catch (err) {
