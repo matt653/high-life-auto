@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import {
     Car,
     ExternalLink,
-    Bot,
-    Lock
+    Bot
 } from 'lucide-react';
+import firebase from 'firebase/compat/app';
 import {
     collection,
     onSnapshot,
@@ -12,8 +13,6 @@ import {
     addDoc,
     updateDoc
 } from 'firebase/firestore';
-
-// Adjusted imports for the moved components/services
 import { auth, db, appId, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
 import { AdminDashboard } from '../apps/ChatBot/components/AdminDashboard';
 import { ChatWidget } from '../apps/ChatBot/components/ChatWidget';
@@ -66,7 +65,7 @@ const ChatBotApp = () => {
                 { id: '2', vin: "1F45678901", name: "2011 Ford F-150 XLT", price: "8500", miles: "190000", comments: "Rust on wheel wells. Runs strong. AC blows cold.", youtube: "", lastSynced: new Date().toISOString() }
             ]);
             setLeads([
-                { id: '1', name: "Alex Rover", status: 'phase_2_interest', lastMessage: "How much is the Malibu?", source: "Rex (Bot)", hwVideo: false, hwDescription: true, hwIssues: false, createdAt: { seconds: Date.now() / 1000 }, updatedAt: { seconds: Date.now() / 1000 } }
+                { id: '1', name: "Alex Rover", status: 'phase_2_interest', lastMessage: "How much is the Malibu?", contactInfo: "555-0199", source: "Rex (Bot)", hwVideo: false, hwDescription: true, hwIssues: false, createdAt: { seconds: Date.now() / 1000 }, updatedAt: { seconds: Date.now() / 1000 } }
             ]);
             setKnowledge([
                 { id: '1', content: "Always be transparent about dents.", createdAt: new Date().toISOString() }
@@ -111,13 +110,13 @@ const ChatBotApp = () => {
 
         try {
             // 1. Try to fetch from real URL
-            const response = await fetch('https://highlifeauto.com/frazer-inventory-updated.csv');
+            const response = await fetch('/frazer-inventory.csv'); // Changed to relative path for better local testing
             if (!response.ok) throw new Error("Failed to fetch CSV");
             const text = await response.text();
             itemsToSync = parseCSV(text);
             console.log("Parsed CSV Items:", itemsToSync.length);
         } catch (err) {
-            console.warn("CSV Sync failed (likely CORS), falling back to mock update for demo.", err);
+            console.warn("CSV Sync failed, falling back to mock update for demo.", err);
             // Fallback Mock Data
             itemsToSync = [
                 { id: '1', vin: "1G1JC12345", name: "2015 Chevrolet Malibu LT", price: "5900", miles: "125000", comments: "Clean title. Needs rear tires. Small dent on bumper.", youtube: "https://youtu.be/example", lastSynced: new Date().toISOString() },
@@ -156,15 +155,6 @@ const ChatBotApp = () => {
         }
     };
 
-    const handleAdminAuth = () => {
-        const password = prompt("Enter Master Password:");
-        if (password === "Highlife8191!") {
-            setView('admin');
-        } else {
-            alert("Access Denied");
-        }
-    };
-
     if (!user) return (
         <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-white font-black italic tracking-tighter">
             <Car className="animate-bounce mr-2" />
@@ -177,33 +167,29 @@ const ChatBotApp = () => {
             {/* GLOBAL HEADER */}
             <header className="bg-white border-b px-6 py-3 flex justify-between items-center z-20 shadow-sm shrink-0">
                 <div className="flex items-center space-x-3">
-                    <div className="bg-orange-600 p-2 rounded-lg text-white shadow-lg rotate-3" onClick={handleAdminAuth}>
+                    <a href="/" className="bg-orange-600 p-2 rounded-lg text-white shadow-lg rotate-3 hover:rotate-0 transition-transform">
                         <Car size={22} />
-                    </div>
+                    </a>
                     <div>
                         <h1 className="text-lg font-black tracking-tighter uppercase italic leading-none">High Life <span className="text-orange-600">Auto</span></h1>
                         <span className="text-[9px] font-bold text-gray-400 tracking-widest uppercase">Inventory Intelligence {demoMode && "(DEMO MODE)"}</span>
                     </div>
                 </div>
 
-                {/* View Switcher Controls */}
-                <div className="flex gap-2">
-                    {view === 'admin' ? (
-                        <button
-                            onClick={() => setView('visitor')}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-wide hover:bg-gray-200"
-                        >
-                            Exit CRM
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleAdminAuth}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-400 transition-colors text-[10px] font-bold uppercase tracking-wide"
-                            title="Staff Login"
-                        >
-                            <Lock size={12} /> Staff Login
-                        </button>
-                    )}
+                {/* View Switcher */}
+                <div className="flex bg-gray-100 p-1 rounded-full border">
+                    <button
+                        onClick={() => setView('visitor')}
+                        className={`flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all ${view === 'visitor' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-800'}`}
+                    >
+                        <Bot size={14} /> Visitor View
+                    </button>
+                    <button
+                        onClick={() => setView('admin')}
+                        className={`flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all ${view === 'admin' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-800'}`}
+                    >
+                        <ExternalLink size={14} /> Admin CRM
+                    </button>
                 </div>
             </header>
 
