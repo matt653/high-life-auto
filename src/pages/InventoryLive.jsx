@@ -10,7 +10,7 @@ import '../components/AutoGrader/AutoGrader.css';
 
 // Firebase Imports
 import { db, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
-import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, query, where, getDocs } from 'firebase/firestore';
 
 // Default CSV URL provided in the original tool
 const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
@@ -97,6 +97,7 @@ const InventoryLive = () => {
     const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
     const [lastSyncTime, setLastSyncTime] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [soldVehicles, setSoldVehicles] = useState([]);
 
     // --- Public Viewer State ---
     const [filter, setFilter] = useState('');
@@ -214,19 +215,64 @@ const InventoryLive = () => {
             const vin = car.vin ? car.vin.trim().toUpperCase() : 'NO_VIN';
             const enhancement = enhancements[vin];
             if (enhancement) {
-                // Overlay AI data
+                // Overlay AI data but PROTECT CSV CORE DATA
                 return {
-                    ...car,
-                    ...enhancement,
-                    // Ensure ID stability if needed
+                    ...car,           // 1. Base CSV
+                    ...enhancement,   // 2. Overlay Backend
+
+                    // 3. Restore Protected Fields
+                    retail: car.retail,
+                    stockNumber: car.stockNumber,
+                    year: car.year,
+                    make: car.make,
+                    vin: car.vin,
+                    model: car.model,
+                    comments: car.comments,
+
+                    // Ensure ID stability
                     id: enhancement.id || car.id
                 };
             }
             return car;
         });
 
-        setVehicles(merged);
-    }, [csvData, enhancements]);
+        // --- Merge Sold Vehicles ---
+        // We append sold vehicles to the list so they appear in the grid
+        const combined = [...merged, ...soldVehicles];
+        setVehicles(combined);
+    }, [csvData, enhancements, soldVehicles]);
+
+    // 3.5 Fetch Sold Live
+    useEffect(() => {
+        if (!isFirebaseConfigured) return;
+
+        const q = query(collection(db, 'inventory_state'), where('status', '==', 'sold'));
+
+        // Use onSnapshot for real-time updates of sold status
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const sold = [];
+            const now = Date.now();
+            const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Filter: Only show if sold within last 48 hours
+                if (data.soldAt && (now - data.soldAt < FORTY_EIGHT_HOURS)) {
+                    sold.push({
+                        ...data,
+                        id: data.vin, // Ensure ID
+                        isSold: true,
+                        // Ensure price is formatted for sorting
+                        retail: data.retail || '0',
+                        mileage: data.mileage || '0'
+                    });
+                }
+            });
+            setSoldVehicles(sold);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
 
     // 4. Auto Sync Interval
@@ -479,19 +525,44 @@ const InventoryLive = () => {
                     }}>
                         {filteredCars.map((car) => (
                             <Link
-                                to={`/vehicle/${car.stockNumber}`}
-                                key={car.stockNumber}
-                                state={{ vehicle: car }}
-                                style={{ textDecoration: 'none', color: 'inherit' }}
+                                to={car.isSold ? '#' : `/vehicle/${car.stockNumber}`}
+                                key={car.stockNumber || car.vin}
+                                state={car.isSold ? null : { vehicle: car }}
+                                onClick={(e) => car.isSold && e.preventDefault()}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    cursor: car.isSold ? 'default' : 'pointer',
+                                    opacity: car.isSold ? 0.8 : 1,
+                                    pointerEvents: car.isSold ? 'none' : 'auto'
+                                }}
                             >
                                 <div style={{
                                     border: '1px solid var(--color-border)',
                                     backgroundColor: 'white',
                                     overflow: 'hidden',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
-                                    cursor: 'pointer',
                                     position: 'relative'
                                 }}>
+                                    {/* SOLD OVERLAY */}
+                                    {car.isSold && (
+                                        <div style={{
+                                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                                            zIndex: 20,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <div style={{
+                                                backgroundColor: '#ef4444', color: 'white',
+                                                fontSize: '2rem', fontWeight: '900',
+                                                padding: '0.5rem 3rem', transform: 'rotate(-15deg)',
+                                                border: '4px solid white',
+                                                boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
+                                            }}>
+                                                SOLD
+                                            </div>
+                                        </div>
+                                    )}
                                     {/* Image Area */}
                                     <div style={{ height: '200px', backgroundColor: '#eee', position: 'relative' }}>
                                         {car.imageUrls && car.imageUrls.length > 0 ? (

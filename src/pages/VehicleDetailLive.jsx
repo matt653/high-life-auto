@@ -322,19 +322,27 @@ const VehicleDetailLive = () => {
                             // Merge Live Data
                             foundCar = {
                                 ...foundCar,
-                                // MERGE ALL FIRESTORE OVERRIDES
-                                // This ensures Price, Photos, Mileage, etc. updated in Admin appear here.
+                                // MERGE STRATEGY: Backend trumps CSV *EXCEPT* for protected fields
                                 ...liveData,
-                                // Keep original ID/Stock if needed, though liveData shouldn't mess it up
-                                id: foundCar.stockNumber,
-                                // Fallbacks if liveData is partial (though usually it's full object merge)
+
+                                // RESTORE PROTECTED CSV FIELDS (User Requirement)
+                                // "Backend should trump the csv file except for price, stock number, year, make, vin, and description"
+                                retail: foundCar.retail,           // Price
+                                stockNumber: foundCar.stockNumber, // Stock
+                                year: foundCar.year,               // Year
+                                make: foundCar.make,               // Make
+                                vin: foundCar.vin,                 // VIN
+                                comments: foundCar.comments,       // Description 
+                                model: foundCar.model,             // Model (Safe to protect)
+
+                                // Keep Backend fields if they exist
                                 aiGrade: liveData.aiGrade || foundCar.aiGrade,
                                 marketingDescription: liveData.marketingDescription || foundCar.marketingDescription,
                                 blemishes: liveData.blemishes || foundCar.blemishes,
                                 websiteNotes: liveData.websiteNotes || foundCar.websiteNotes,
                                 marketPrice: liveData.marketPrice || foundCar.marketPrice,
                                 imageUrls: liveData.imageUrls || foundCar.imageUrls,
-                                retail: liveData.retail || foundCar.retail,
+                                // Note: Mileage is NOT protected by user rule, so Backend wins (liveData.mileage)
                                 mileage: liveData.mileage || foundCar.mileage,
                                 youtubeUrl: liveData.youtubeUrl || foundCar.youtubeUrl
                             };

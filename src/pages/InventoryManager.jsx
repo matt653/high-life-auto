@@ -10,7 +10,7 @@ import '../components/AutoGrader/AutoGrader.css';
 
 // Firebase Imports
 import { db, isFirebaseConfigured, storage } from '../apps/ChatBot/services/firebase';
-import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Default CSV URL provided in the original tool
@@ -222,6 +222,83 @@ const InventoryManager = () => {
     };
 
     // 3. The Merger
+    // --- Missing Vehicle Reconciliation ---
+    const [missingVehicles, setMissingVehicles] = useState([]);
+
+    const checkMissingVehicles = async (currentList) => {
+        // 1. Get Snapshot of "Active" vehicles from Firestore
+        const snapshotRef = collection(db, 'inventory_state');
+        const snapshot = await getDocs(snapshotRef);
+
+        const currentVins = new Set(currentList.map(v => v.vin));
+        const missing = [];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // If it WAS active, but is NOT in current CSV, it's missing
+            if (data.status === 'active' && !currentVins.has(data.vin)) {
+                missing.push(data);
+            }
+        });
+
+        if (missing.length > 0) {
+            setMissingVehicles(missing);
+        }
+
+        // 2. Upsert Current Inventory as "Active"
+        // This ensures checking against the latest state next time
+        currentList.forEach(vehicle => {
+            if (vehicle.vin && vehicle.vin !== 'NO_VIN') {
+                const vRef = doc(db, 'inventory_state', vehicle.vin);
+                // We only update if necessary, but setDoc with merge is fine/cheap enough here
+                setDoc(vRef, {
+                    vin: vehicle.vin,
+                    status: 'active',
+                    lastSeen: Date.now(),
+                    // Store details for "Sold" display
+                    year: vehicle.year || '',
+                    make: vehicle.make || '',
+                    model: vehicle.model || '',
+                    trim: vehicle.trim || '',
+                    imageUrls: vehicle.imageUrls || [],
+                    retail: vehicle.retail || '',
+                    stockNumber: vehicle.stockNumber || ''
+                }, { merge: true });
+            }
+        });
+    };
+
+    const handleMarkSold = async (vin) => {
+        try {
+            await setDoc(doc(db, 'inventory_state', vin), {
+                status: 'sold',
+                soldAt: Date.now()
+            }, { merge: true });
+
+            // Remove from local missing list
+            setMissingVehicles(prev => prev.filter(v => v.vin !== vin));
+        } catch (e) {
+            console.error("Error marking sold:", e);
+        }
+    };
+
+    const handleRemovePermanent = async (vin) => {
+        try {
+            // Option A: Delete entirely
+            // await deleteDoc(doc(db, 'inventory_state', vin));
+
+            // Option B: Mark removed (history)
+            await setDoc(doc(db, 'inventory_state', vin), {
+                status: 'removed',
+                removedAt: Date.now()
+            }, { merge: true });
+
+            setMissingVehicles(prev => prev.filter(v => v.vin !== vin));
+        } catch (e) {
+            console.error("Error removing:", e);
+        }
+    };
+
     useEffect(() => {
         let baseList = csvData;
         if (baseList.length === 0) {
@@ -239,7 +316,87 @@ const InventoryManager = () => {
         });
 
         setVehicles(merged);
+
+        // Trigger Reconciliation (Check for missing cars) after merge
+        if (merged.length > 0 && isFirebaseConfigured) {
+            checkMissingVehicles(merged);
+        }
     }, [csvData, enhancements]);
+
+
+    const checkMissingVehicles_OLD = async (currentList) => {
+        // 1. Get Snapshot of "Active" vehicles from Firestore
+        const snapshotRef = collection(db, 'inventory_state');
+        const snapshot = await getDocs(snapshotRef);
+
+        const currentVins = new Set(currentList.map(v => v.vin));
+        const missing = [];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // If it WAS active, but is NOT in current CSV, it's missing
+            if (data.status === 'active' && !currentVins.has(data.vin)) {
+                missing.push(data);
+            }
+        });
+
+        if (missing.length > 0) {
+            setMissingVehicles(missing);
+        }
+
+        // 2. Upsert Current Inventory as "Active"
+        // This ensures checking against the latest state next time
+        currentList.forEach(vehicle => {
+            if (vehicle.vin && vehicle.vin !== 'NO_VIN') {
+                const vRef = doc(db, 'inventory_state', vehicle.vin);
+                // We only update if necessary, but setDoc with merge is fine/cheap enough here
+                setDoc(vRef, {
+                    vin: vehicle.vin,
+                    status: 'active',
+                    lastSeen: Date.now(),
+                    // Store details for "Sold" display
+                    year: vehicle.year || '',
+                    make: vehicle.make || '',
+                    model: vehicle.model || '',
+                    trim: vehicle.trim || '',
+                    imageUrls: vehicle.imageUrls || [],
+                    retail: vehicle.retail || '',
+                    stockNumber: vehicle.stockNumber || ''
+                }, { merge: true });
+            }
+        });
+    };
+
+    const handleMarkSold_OLD = async (vin) => {
+        try {
+            await setDoc(doc(db, 'inventory_state', vin), {
+                status: 'sold',
+                soldAt: Date.now()
+            }, { merge: true });
+
+            // Remove from local missing list
+            setMissingVehicles(prev => prev.filter(v => v.vin !== vin));
+        } catch (e) {
+            console.error("Error marking sold:", e);
+        }
+    };
+
+    const handleRemovePermanent_OLD = async (vin) => {
+        try {
+            // Option A: Delete entirely
+            // await deleteDoc(doc(db, 'inventory_state', vin));
+
+            // Option B: Mark removed (history)
+            await setDoc(doc(db, 'inventory_state', vin), {
+                status: 'removed',
+                removedAt: Date.now()
+            }, { merge: true });
+
+            setMissingVehicles(prev => prev.filter(v => v.vin !== vin));
+        } catch (e) {
+            console.error("Error removing:", e);
+        }
+    };
 
     // 4. Auto Sync Interval
     useEffect(() => {
@@ -479,6 +636,82 @@ const InventoryManager = () => {
                     onSave={handleSaveVehicle}
                     onClose={() => setEditingVehicle(null)}
                 />
+            )}
+
+            {/* MISSING VEHICLES PROMPT */}
+            {missingVehicles.length > 0 && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999,
+                    display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div style={{
+                        backgroundColor: '#1e293b', padding: '2rem', borderRadius: '1rem',
+                        maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto',
+                        border: '1px solid #475569', color: 'white'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', color: '#f59e0b' }}>
+                            <AlertCircle size={32} />
+                            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Inventory Update Detected</h2>
+                        </div>
+                        <p style={{ color: '#cbd5e1', marginBottom: '2rem' }}>
+                            The following vehicles have been removed from the CSV feed.
+                            Please confirm their status to update the website accordingly.
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {missingVehicles.map(vehicle => (
+                                <div key={vehicle.vin} style={{
+                                    backgroundColor: '#0f172a', padding: '1rem', borderRadius: '0.5rem',
+                                    border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '1rem'
+                                }}>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        {vehicle.imageUrls && vehicle.imageUrls[0] && (
+                                            <img src={vehicle.imageUrls[0]} alt="" style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                                        )}
+                                        <div>
+                                            <div style={{ fontWeight: 'bold' }}>{vehicle.year} {vehicle.make} {vehicle.model}</div>
+                                            <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Stock: {vehicle.stockNumber} • VIN: {vehicle.vin}</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <button
+                                            onClick={() => handleMarkSold(vehicle.vin)}
+                                            style={{
+                                                flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: 'none',
+                                                backgroundColor: '#16a34a', color: 'white', fontWeight: 'bold', cursor: 'pointer'
+                                            }}
+                                        >
+                                            Did this Sell? (Mark Sold)
+                                        </button>
+                                        <button
+                                            onClick={() => handleRemovePermanent(vehicle.vin)}
+                                            style={{
+                                                flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #ef4444',
+                                                backgroundColor: 'transparent', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer'
+                                            }}
+                                        >
+                                            Remove Now
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                            <button
+                                onClick={() => setMissingVehicles([])}
+                                style={{
+                                    color: '#64748b', background: 'none', border: 'none',
+                                    textDecoration: 'underline', cursor: 'pointer'
+                                }}
+                            >
+                                Remind me later (Dismiss)
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
