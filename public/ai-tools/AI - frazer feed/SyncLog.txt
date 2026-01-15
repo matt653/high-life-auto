@@ -96,3 +96,29 @@
 [2026-01-15 08:40:32] Successfully copied: DealerCarSearch-1.csv
 [2026-01-15 08:40:32] Triggering Website Update for DealerCarSearch-1.csv...
 [2026-01-15 08:40:32] Copied to website repo public folder.
+[2026-01-15 08:40:33] SUCCESS: Pushed update to GitHub (Website will rebuild).
+[2026-01-15 08:40:33] Updates detected for DealerWebsites-1.csv
+[2026-01-15 08:40:33] Successfully copied: DealerWebsites-1.csv
+[2026-01-15 08:40:33] Updates detected for Dodah-1.csv
+[2026-01-15 08:40:33] Successfully copied: Dodah-1.csv
+[2026-01-15 08:40:33] Updates detected for GrooveCar-1.csv
+[2026-01-15 08:40:33] Successfully copied: GrooveCar-1.csv
+[2026-01-15 08:40:33] Updates detected for ProMotiveCar-1.csv
+[2026-01-15 08:40:33] Successfully copied: ProMotiveCar-1.csv
+[2026-01-15 08:40:33] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 08:40:33] Updates detected for AutoManager-1.csv
+[2026-01-15 08:40:33] Successfully copied: AutoManager-1.csv
+[2026-01-15 08:40:33] Updates detected for BuySellAutoMart-1.csv
+[2026-01-15 08:40:33] Successfully copied: BuySellAutoMart-1.csv
+[2026-01-15 08:40:33] Updates detected for CarGurus Sales-1.csv
+[2026-01-15 08:40:33] Successfully copied: CarGurus Sales-1.csv
+[2026-01-15 08:40:33] Updates detected for CarGurus-1.csv
+[2026-01-15 08:40:33] Successfully copied: CarGurus-1.csv
+[2026-01-15 08:40:33] Updates detected for CarsForSale-1.txt
+[2026-01-15 08:40:33] Successfully copied: CarsForSale-1.txt
+[2026-01-15 08:40:33] Updates detected for Dealer24x7-1.csv
+[2026-01-15 08:40:33] Successfully copied: Dealer24x7-1.csv
+[2026-01-15 08:40:34] Updates detected for DealerCarSearch-1.csv
+[2026-01-15 08:40:34] Successfully copied: DealerCarSearch-1.csv
+[2026-01-15 08:40:34] Triggering Website Update for DealerCarSearch-1.csv...
+[2026-01-15 08:40:34] Copied to website repo public folder.
