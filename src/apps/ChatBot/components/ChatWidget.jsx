@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, RefreshCw, Zap, Globe } from 'lucide-react';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, getDoc } from 'firebase/firestore';
 import { db, appId } from '../services/firebase';
-import { generateChatResponse } from '../services/geminiService';
 
 export const ChatWidget = ({ userId, inventory, knowledge, integrations, demoMode }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -54,35 +53,15 @@ export const ChatWidget = ({ userId, inventory, knowledge, integrations, demoMod
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chats', sessionId, 'messages'), { role: 'user', text: userText, createdAt: serverTimestamp() });
         }
 
-        const inventoryContext = inventory.map(i => `VEHICLE: ${i.name}\nPRICE: $${i.price}\nMILES: ${i.miles}\nNOTES: ${i.comments}`).join('\n---\n');
+        // Simulating delay
+        setTimeout(async () => {
+            setIsTyping(false);
+            const text = "Turbo is currently undergoing maintenance. Please call us directly at 319-372-8191.";
 
-        const systemPrompt = `
-      You are Turbo, the High Life Auto car expert. Your job is to QUALIFY the lead before capturing their info.
-      
-      QUALIFYING FLOW:
-      1. NEEDS: Find out what they need the vehicle for (Commute? Work? Family?).
-      2. BUDGET/CASH: Explicitly mention we are CASH ONLY. Ask if they have the cash ready or outside financing. DO NOT mention trades unless the user asks first.
-      3. TIMELINE: Ask when they are looking to get behind the wheel.
-      4. CONVERT: Once you know they have the cash and a need, ask for their Name and Phone Number to schedule a test drive.
-
-      STRICT RULES:
-      1. ONLY SPEAK IN FACTS regarding our inventory.
-      2. NO SPECULATION: Do not mention "known issues" for a model unless the specific NOTES below say THIS vehicle has that problem.
-      3. SEARCH GROUNDING: Use Google Search for general info (e.g., "tow capacity for 2011 F150") but use the INVENTORY list for pricing and availability.
-      4. WE DO NOT OFFER FINANCING. We are a cash-only dealership.
-      
-      INVENTORY:
-      ${inventoryContext}
-    `;
-
-        const history = messages.map(m => ({ role: m.role, text: m.text })).slice(-10);
-        const { text, sources } = await generateChatResponse(userText, systemPrompt, history);
-
-        setIsTyping(false);
-
-        const modelMsg = { role: 'model', text, sources, createdAt: demoMode ? new Date() : serverTimestamp() };
-        if (demoMode) setMessages(prev => [...prev, modelMsg]);
-        else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chats', sessionId, 'messages'), modelMsg);
+            const modelMsg = { role: 'model', text, createdAt: demoMode ? new Date() : serverTimestamp() };
+            if (demoMode) setMessages(prev => [...prev, modelMsg]);
+            else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chats', sessionId, 'messages'), modelMsg);
+        }, 1000);
     };
 
     return (
