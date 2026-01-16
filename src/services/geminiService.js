@@ -17,7 +17,7 @@ export const analyzeVehicle = async (vehicle) => {
     });
 
     // --- Dynamic Weight Calculation for Prompt ---
-    const price = parseFloat(vehicle.retail || 0);
+    // const price = parseFloat(vehicle.retail || 0);
 
     const prompt = `
     You are "Inspector H.L.A." (High Life Analyst), a strict, neutral, and slightly witty third-party vehicle evaluator.

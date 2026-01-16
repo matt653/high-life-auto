@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, AlertCircle, RefreshCw, Heart, Settings, Shield, Lock, FileUp } from 'lucide-react';
 
-import { useGarage } from '../context/GarageContext';
+// import { useGarage } from '../context/GarageContext';
 import InventoryTable from '../components/AutoGrader/InventoryTable';
 import VehicleEditor from '../components/AutoGrader/VehicleEditor';
 import { RAW_VEHICLE_CSV } from '../components/AutoGrader/constants';
@@ -10,7 +10,7 @@ import '../components/AutoGrader/AutoGrader.css';
 
 // Firebase Imports
 import { db, isFirebaseConfigured, storage } from '../apps/ChatBot/services/firebase';
-import { collection, onSnapshot, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Default CSV URL provided in the original tool
@@ -30,7 +30,7 @@ const parseCSV = (csv) => {
         if (!line) continue;
 
         // Regex to match CSV fields: quoted OR non-quoted
-        const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+        // const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
 
         // Simpler Split for well-formed files, but tolerant of internal commas
         // actually, a manual char-by-char parse is safest for "15, Ram" type issues
@@ -93,7 +93,8 @@ const InventoryManager = () => {
 
     // Auth & View Mode
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [viewMode, setViewMode] = useState('manager'); // FORCED MANAGER MODE
+    // eslint-disable-next-line no-unused-vars
+    const [viewMode, setViewMode] = useState('grid');
 
     const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
     const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -104,7 +105,7 @@ const InventoryManager = () => {
     const [filter, setFilter] = useState('');
     const [sortKey, setSortKey] = useState('retail');
     const [sortOrder, setSortOrder] = useState('asc');
-    const [maxMileage, setMaxMileage] = useState(1000000);
+    const [maxMileage, setMaxMileage] = useState(250000);
 
     // Persistence Keys
     const SETTINGS_KEY = 'highlife_settings_v1';
@@ -128,6 +129,7 @@ const InventoryManager = () => {
         }
     }, []);
 
+    // eslint-disable-next-line no-unused-vars
     const [dbStatus, setDbStatus] = useState({ status: 'connecting', count: 0, error: null });
 
     // 1. Firestore Sync (Enhancements)

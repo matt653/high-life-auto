@@ -10,7 +10,7 @@ import '../components/AutoGrader/AutoGrader.css';
 
 // Firebase Imports
 import { db, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
-import { collection, onSnapshot, doc, setDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 // Default CSV URL provided in the original tool
 const DEFAULT_CSV_URL = "/frazer-inventory-updated.csv";
@@ -97,17 +97,15 @@ const InventoryLive = () => {
     const [vehicles, setVehicles] = useState([]);
     const [editingVehicle, setEditingVehicle] = useState(null);
 
-    // --- Firebase & State ---
-    const [csvData, setCsvData] = useState([]);
-    const [enhancements, setEnhancements] = useState({});
-
     // Auth & View Mode
+    // eslint-disable-next-line no-unused-vars
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [viewMode, setViewMode] = useState('public');
-
     const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
     const [lastSyncTime, setLastSyncTime] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [soldVehicles, setSoldVehicles] = useState([]);
 
     // --- Public Viewer State ---
@@ -144,6 +142,7 @@ const InventoryLive = () => {
         }
     }, []);
 
+    // eslint-disable-next-line no-unused-vars
     const [dbStatus, setDbStatus] = useState({ status: 'connecting', count: 0, error: null });
 
     // 1. Firestore Sync (Enhancements)
@@ -346,75 +345,7 @@ const InventoryLive = () => {
     };
 
     // SAVING NOW WRITES TO FIREBASE (PUBLISH)
-    const handleSaveVehicle = async (updatedVehicle) => {
-        // Debugging Feedback - REMOVED
-        // alert("DEBUG: Parent received Save Request for VIN: " + updatedVehicle.vin);
 
-        if (!updatedVehicle.vin) {
-            alert("Error: Cannot save vehicle without VIN");
-            return;
-        }
-
-        if (!isFirebaseConfigured) {
-            alert("CANNOT SAVE: Firebase API Key is missing. App is in Read-Only Mode.");
-            return;
-        }
-
-        const vin = updatedVehicle.vin.trim().toUpperCase();
-
-        const enhancementData = {
-            vin: vin,
-            aiGrade: updatedVehicle.aiGrade,
-            marketingDescription: updatedVehicle.marketingDescription,
-            blemishes: updatedVehicle.blemishes,
-            groundingSources: updatedVehicle.groundingSources,
-            websiteNotes: updatedVehicle.websiteNotes,
-            // PERSISTENT OVERRIDES (These overwrite CSV data)
-            retail: updatedVehicle.retail,
-            mileage: updatedVehicle.mileage,
-            imageUrls: updatedVehicle.imageUrls,
-            comments: updatedVehicle.comments,
-            options: updatedVehicle.options,
-            engine: updatedVehicle.engine,
-            transmission: updatedVehicle.transmission,
-            exteriorColor: updatedVehicle.exteriorColor,
-            interiorColor: updatedVehicle.interiorColor,
-            marketPrice: updatedVehicle.marketPrice,
-            lastUpdated: Date.now()
-        };
-
-        // SANITIZE DATA: Firestore hates 'undefined', so we convert to null
-        Object.keys(enhancementData).forEach(key => {
-            if (enhancementData[key] === undefined) enhancementData[key] = null;
-        });
-
-        try {
-            console.log("Saving to Firestore:", vin, enhancementData);
-            await setDoc(doc(db, 'vehicle_enhancements', vin), enhancementData, { merge: true });
-
-            // Update local state immediately to reflect changes in the UI
-            setVehicles(prevVehicles => prevVehicles.map(v =>
-                v.vin === vin ? { ...v, ...enhancementData } : v
-            ));
-
-            setEditingVehicle(null);
-        } catch (e) {
-            console.error("Error saving to Firestore", e);
-            alert(`YOUR SAVE FAILED:\n${e.message}\n\nCheck your internet connection or API Keys.`);
-        }
-    };
-
-    const handleDealerLogin = () => {
-        const password = prompt("Enter Dealer Password:");
-        if (password === "Highlife8191!") {
-            setIsAuthenticated(true);
-            setViewMode('manager');
-            localStorage.setItem('highlife_staff_auth', 'true'); // Persist Login
-            alert("Authenticated! Welcome to the Back Office.");
-        } else {
-            alert("Incorrect password.");
-        }
-    };
 
     return (
         <div className="inventory-page">

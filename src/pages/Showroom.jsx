@@ -163,6 +163,8 @@ const Showroom = () => {
                     let addedCount = 0;
                     let updatedCount = 0;
 
+
+
                     const mergedVehicles = newInventory.map(newVehicle => {
                         const existing = existingMap.get(newVehicle.vin);
 

@@ -15,6 +15,7 @@ const VehicleDetailWithGrade = () => {
         // If car has a YouTube video, analyze it for grading
         // Video analysis removed
         if (car && car.youtubeVideoUrl) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setVehicleGrade(null);
         }
     }, [car]);

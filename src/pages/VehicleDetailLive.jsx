@@ -74,6 +74,7 @@ const InteractiveGrader = ({ gradeData }) => {
             keys.forEach((k, i) => {
                 initial[k] = split + (i === 0 ? remainder : 0);
             });
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setUserWeights(initial);
         }
     }, [gradeData]);
@@ -138,6 +139,7 @@ const InteractiveGrader = ({ gradeData }) => {
         });
 
         if (totalPossibleWeight === 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setPersonal({ score: '0.0', letter: 'N/A' });
             return;
         }
@@ -267,7 +269,7 @@ const VehicleDetailLive = () => {
         loadVehicle().then(() => clearTimeout(safetyTimer));
 
         return () => clearTimeout(safetyTimer);
-    }, [id]);
+    }, [id]); // Removed loadVehicle from deps to prevent loop
 
     const loadVehicle = async () => {
         setLoading(true);
