@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, AlertCircle, RefreshCw, Heart, Settings, Shield, Lock } from 'lucide-react';
+import { Search, AlertCircle, Heart, Shield } from 'lucide-react';
 
 import { useGarage } from '../context/GarageContext';
 import InventoryTable from '../components/AutoGrader/InventoryTable';
@@ -10,12 +10,12 @@ import '../components/AutoGrader/AutoGrader.css';
 
 // Firebase Imports
 import { db, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, setDoc } from 'firebase/firestore';
 
 // Default CSV URL provided in the original tool
 const DEFAULT_CSV_URL = "/frazer-inventory-updated.csv";
 
-// Helper functions for safe number parsing (Moved to module scope)
+// Helper functions for safe number parsing
 const safeFloat = (v) => {
     if (typeof v === 'number') return v;
     return parseFloat(String(v || '0').replace(/[^0-9.-]/g, '')) || 0;
@@ -27,23 +27,16 @@ const safeInt = (v) => {
 };
 
 const parseCSV = (csv) => {
-    // Robust CSV Parser that handles quoted commas and newlines correctly
     const lines = csv.trim().split(/\r?\n/);
     if (lines.length === 0) return [];
 
     const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-
     const result = [];
 
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
 
-        // Regex to match CSV fields: quoted OR non-quoted
-        const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-
-        // Simpler Split for well-formed files, but tolerant of internal commas
-        // actually, a manual char-by-char parse is safest for "15, Ram" type issues
         const values = [];
         let current = '';
         let inQuotes = false;
@@ -53,15 +46,14 @@ const parseCSV = (csv) => {
             if (char === '"') {
                 inQuotes = !inQuotes;
             } else if (char === ',' && !inQuotes) {
-                values.push(current.trim().replace(/^"|"$/g, '')); // Push and clean quotes
+                values.push(current.trim().replace(/^"|"$/g, ''));
                 current = '';
             } else {
                 current += char;
             }
         }
-        values.push(current.trim().replace(/^"|"$/g, '')); // Last value
+        values.push(current.trim().replace(/^"|"$/g, ''));
 
-        // Map to headers
         const get = (h) => {
             const idx = headers.indexOf(h);
             return (values[idx] || "").trim();
@@ -93,76 +85,62 @@ const parseCSV = (csv) => {
 };
 
 const InventoryLive = () => {
-    // --- AutoGrader State ---
+    // --- State ---
     const [vehicles, setVehicles] = useState([]);
-    const [editingVehicle, setEditingVehicle] = useState(null);
-
-    // Auth & View Mode
-    // eslint-disable-next-line no-unused-vars
+    const [editingVehicle, setEditingVehicle] = useState(null); // Keep for consistency if needed
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    // eslint-disable-next-line no-unused-vars
-    const [viewMode, setViewMode] = useState('public');
-    const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
+
+    // Data Sources
+    const [csvData, setCsvData] = useState([]);
+    const [enhancements, setEnhancements] = useState({});
+    const [soldVehicles, setSoldVehicles] = useState([]);
     const [lastSyncTime, setLastSyncTime] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
-    // eslint-disable-next-line no-unused-vars
-    const [soldVehicles, setSoldVehicles] = useState([]);
+    const [dbStatus, setDbStatus] = useState({ status: 'connecting', count: 0, error: null });
 
-    // --- Public Viewer State ---
+    // Filtering & Sorting
     const [filter, setFilter] = useState('');
     const [priceRange, setPriceRange] = useState(50000);
-    const { toggleGarage, isInGarage } = useGarage();
-
-    // --- Advanced Filtering State ---
+    const [maxMileage, setMaxMileage] = useState(300000);
     const [sortKey, setSortKey] = useState('retail');
     const [sortOrder, setSortOrder] = useState('asc');
-    const [maxMileage, setMaxMileage] = useState(1000000);
 
-    // Persistence Keys
-    const SETTINGS_KEY = 'highlife_settings_v1';
+    // Context Safety
+    const garageContext = useGarage();
+    const { toggleGarage, isInGarage } = garageContext || { toggleGarage: () => { }, isInGarage: () => false };
 
-    // Initial Settings Load
+    // --- Effects ---
+
+    // 1. Load Settings & Auth
     useEffect(() => {
-        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+        const savedSettings = localStorage.getItem('highlife_settings_v1');
         if (savedSettings) {
-            const parsed = JSON.parse(savedSettings);
-            // Fix: If saved URL is the old remote one, revert to local relative path
-            if (parsed.googleSheetUrl === "https://highlifeauto.com/frazer-inventory-updated.csv") {
-                setGoogleSheetUrl(DEFAULT_CSV_URL);
-            } else {
-                setGoogleSheetUrl(parsed.googleSheetUrl || DEFAULT_CSV_URL);
+            try {
+                const parsed = JSON.parse(savedSettings);
+                setLastSyncTime(parsed.lastSyncTime || null);
+            } catch (e) {
+                console.error("Settings parse error", e);
             }
-            setLastSyncTime(parsed.lastSyncTime || null);
         }
-
-        // Staff Auth Check
-        if (localStorage.getItem('highlife_staff_auth') === 'true') {
+        if (sessionStorage.getItem('highlife_staff_auth') === 'true') {
             setIsAuthenticated(true);
-            // setViewMode('manager'); // Removed auto-redirect so you can see customer view
         }
     }, []);
 
-    // eslint-disable-next-line no-unused-vars
-    const [dbStatus, setDbStatus] = useState({ status: 'connecting', count: 0, error: null });
-
-    // 1. Firestore Sync (Enhancements)
-    // This connects to the database to pull "Grades" and "Descriptions"
+    // 2. Firestore Sync (Enhancements)
     useEffect(() => {
         if (!isFirebaseConfigured) {
-            console.warn("Firebase not configured - Enhancements will not save remotely.");
             setDbStatus({ status: 'error', error: 'Firebase Config Missing' });
             return;
         }
 
         const unsubscribe = onSnapshot(collection(db, 'vehicle_enhancements'), (snapshot) => {
             const data = {};
-            let count = 0;
             snapshot.forEach(doc => {
                 data[doc.id] = doc.data();
-                count++;
             });
             setEnhancements(data);
-            setDbStatus({ status: 'connected', count, error: null });
+            setDbStatus({ status: 'connected', count: Object.keys(data).length, error: null });
         }, (error) => {
             console.error("Firestore sync error:", error);
             setDbStatus({ status: 'error', error: error.message });
@@ -171,170 +149,94 @@ const InventoryLive = () => {
         return () => unsubscribe();
     }, []);
 
-    // 2. CSV Sync (Base Inventory)
-    // Fetches the raw car connection from Frazer
-    const performSmartSync = useCallback(async (manual = false) => {
-        if (!googleSheetUrl) return;
-
+    // 3. Sync CSV Data
+    const performSmartSync = useCallback(async () => {
         setIsSyncing(true);
         try {
-            const cacheBuster = `?t=${new Date().getTime()}`;
-            const fetchUrl = googleSheetUrl.includes('?') ? `${googleSheetUrl}&t=${new Date().getTime()}` : `${googleSheetUrl}${cacheBuster}`;
-
-            const response = await fetch(fetchUrl);
-            if (!response.ok) throw new Error("Failed to fetch CSV feed");
-            const csvText = await response.text();
-
-            const remoteInventory = parseCSV(csvText);
-
-            if (!remoteInventory || remoteInventory.length === 0) {
-                throw new Error("Parsed CSV was empty");
+            const response = await fetch(`${DEFAULT_CSV_URL}?t=${Date.now()}`);
+            if (!response.ok) throw new Error("Failed to fetch CSV");
+            const text = await response.text();
+            const parsed = parseCSV(text);
+            if (parsed && parsed.length > 0) {
+                setCsvData(parsed);
+                setLastSyncTime(new Date().toLocaleString());
+            } else {
+                console.warn("Parsed CSV Empty, using fallback");
+                setCsvData(parseCSV(RAW_VEHICLE_CSV || ""));
             }
-
-            setCsvData(remoteInventory);
-            setLastSyncTime(new Date().toLocaleString());
-            if (manual) alert("Inventory Synced! (Enhancements applied automatically)");
-
         } catch (error) {
-            console.error("Sync Error:", error);
-            if (manual) alert(`Failed to sync: ${error.message}`);
+            console.error("Sync failed", error);
+            // Fallback
+            setCsvData(parseCSV(RAW_VEHICLE_CSV || ""));
         } finally {
             setIsSyncing(false);
         }
-    }, [googleSheetUrl]);
+    }, []);
 
-    // 3. The Merger (CSV + Firestore)
-    // Combines raw data with AI enhancements
+    // Initial Sync
     useEffect(() => {
-        let baseList = csvData;
+        performSmartSync();
+    }, [performSmartSync]);
 
-        // Fallback Logic if CSV is empty (Initial Load Rescue)
-        if (baseList.length === 0) {
-            const rawParsed = parseCSV(RAW_VEHICLE_CSV || "");
-            if (rawParsed.length > 0) baseList = rawParsed;
-            else {
-                // Emergency Hardcoded
-                baseList = [
-                    { stockNumber: "FALLBACK-001", vin: "FB001", year: "2015", make: "Chevrolet", model: "Malibu", retail: "5995", mileage: "120,000", imageUrls: [], comments: "Reliable daily driver." },
-                    { stockNumber: "FALLBACK-002", vin: "FB002", year: "2012", make: "Ford", model: "F-150", retail: "10995", mileage: "145,000", imageUrls: [], comments: "Solid work truck." }
-                ];
-            }
-        }
-
-        const merged = baseList.map(car => {
-            const vin = car.vin ? car.vin.trim().toUpperCase() : 'NO_VIN';
-            const enhancement = enhancements[vin];
-            if (enhancement) {
-                // Overlay AI data but PROTECT CSV CORE DATA
-                return {
-                    ...car,           // 1. Base CSV
-                    ...enhancement,   // 2. Overlay Backend
-
-                    // 3. Restore Protected Fields
-                    retail: car.retail,
-                    stockNumber: car.stockNumber,
-                    year: car.year,
-                    make: car.make,
-                    vin: car.vin,
-                    model: car.model,
-                    comments: car.comments,
-                    mileage: car.mileage,
-
-                    // Ensure ID stability
-                    id: enhancement.id || car.id
-                };
-            }
-            return car;
-        });
-
-        // --- Merge Sold Vehicles ---
-        // We append sold vehicles to the list so they appear in the grid
-        const combined = [...merged, ...soldVehicles];
-        setVehicles(combined);
-    }, [csvData, enhancements, soldVehicles]);
-
-    // 3.5 Fetch Sold Live
+    // 4. Sold Vehicles Sync
     useEffect(() => {
         if (!isFirebaseConfigured) return;
-
         const q = query(collection(db, 'inventory_state'), where('status', '==', 'sold'));
-
-        // Use onSnapshot for real-time updates of sold status
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const sold = [];
             const now = Date.now();
-            const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
-
             snapshot.forEach(doc => {
                 const data = doc.data();
-                // Filter: Only show if sold within last 48 hours
-                if (data.soldAt && (now - data.soldAt < FORTY_EIGHT_HOURS)) {
-                    sold.push({
-                        ...data,
-                        id: data.vin, // Ensure ID
-                        isSold: true,
-                        // Ensure price is formatted for sorting
-                        retail: data.retail || '0',
-                        mileage: data.mileage || '0'
-                    });
+                if (data.soldAt && (now - data.soldAt < 172800000)) { // 48 hours
+                    sold.push({ ...data, isSold: true, id: data.vin });
                 }
             });
             setSoldVehicles(sold);
         });
-
         return () => unsubscribe();
     }, []);
 
-
-    // 4. Auto Sync Interval
+    // 5. Merge Data
     useEffect(() => {
-        if (!googleSheetUrl) return;
+        if (csvData.length === 0) return;
 
-        // Initial Fetch
-        performSmartSync(false);
-
-        const intervalId = setInterval(() => {
-            const now = new Date();
-            const currentHour = now.getHours();
-            if (currentHour >= 8 && currentHour <= 19) {
-                performSmartSync(false);
+        const merged = csvData.map(car => {
+            const vin = car.vin ? car.vin.trim().toUpperCase() : 'NO_VIN';
+            const enhancement = enhancements[vin];
+            if (enhancement) {
+                return {
+                    ...car,
+                    ...enhancement,
+                    // Restore key fields to prevent overwrites
+                    retail: car.retail,
+                    mileage: car.mileage,
+                    id: enhancement.id || car.vin || car.stockNumber // Ensure ID
+                };
             }
-        }, 60 * 60 * 1000);
-        return () => clearInterval(intervalId);
-    }, [googleSheetUrl, performSmartSync]);
+            return { ...car, id: car.vin || car.stockNumber }; // Ensure ID
+        });
 
+        setVehicles([...merged, ...soldVehicles]);
+    }, [csvData, enhancements, soldVehicles]);
 
-    // Save Settings locally
-    useEffect(() => {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ googleSheetUrl, lastSyncTime }));
-    }, [googleSheetUrl, lastSyncTime]);
-
-
-
-
+    // 6. Filtering
     const filteredCars = useMemo(() => {
-        return vehicles.filter(car =>
-            ((car.make || '').toLowerCase().includes(filter.toLowerCase()) ||
+        return vehicles.filter(car => {
+            const searchMatch = !filter ||
+                (car.make || '').toLowerCase().includes(filter.toLowerCase()) ||
                 (car.model || '').toLowerCase().includes(filter.toLowerCase()) ||
                 (car.year || '').toString().includes(filter) ||
-                (car.stockNumber || '').toLowerCase().includes(filter.toLowerCase())) &&
-            (safeFloat(car.retail) <= priceRange) &&
-            (safeInt(car.mileage) <= maxMileage)
-        ).sort((a, b) => {
-            let valA, valB;
+                (car.stockNumber || '').toLowerCase().includes(filter.toLowerCase());
 
-            if (sortKey === 'retail') {
-                valA = safeFloat(a.retail);
-                valB = safeFloat(b.retail);
-            } else if (sortKey === 'mileage') {
-                valA = safeInt(a.mileage);
-                valB = safeInt(b.mileage);
-            } else if (sortKey === 'year') {
-                valA = parseInt(a.year) || 0;
-                valB = parseInt(b.year) || 0;
-            }
+            const priceMatch = safeFloat(car.retail) <= priceRange;
+            const mileMatch = safeInt(car.mileage) <= maxMileage;
 
-            return sortOrder === 'asc' ? valA - valB : valB - valA;
+            return searchMatch && priceMatch && mileMatch;
+        }).sort((a, b) => {
+            if (sortKey === 'retail') return sortOrder === 'asc' ? safeFloat(a.retail) - safeFloat(b.retail) : safeFloat(b.retail) - safeFloat(a.retail);
+            if (sortKey === 'mileage') return sortOrder === 'asc' ? safeInt(a.mileage) - safeInt(b.mileage) : safeInt(b.mileage) - safeInt(a.mileage);
+            if (sortKey === 'year') return sortOrder === 'asc' ? parseInt(a.year) - parseInt(b.year) : parseInt(b.year) - parseInt(a.year);
+            return 0;
         });
     }, [vehicles, filter, priceRange, maxMileage, sortKey, sortOrder]);
 
@@ -344,31 +246,37 @@ const InventoryLive = () => {
         setSortOrder(order);
     };
 
-    // SAVING NOW WRITES TO FIREBASE (PUBLISH)
-
+    const handleDealerLogin = () => {
+        const password = prompt("Enter Dealer Password:");
+        if (password === "Highlife8191!") {
+            setIsAuthenticated(true);
+            sessionStorage.setItem('highlife_staff_auth', 'true');
+            alert("Authenticated.");
+        } else {
+            alert("Incorrect password.");
+        }
+    };
 
     return (
         <div className="inventory-page">
             <section style={{ backgroundColor: '#f9f9f9', padding: '3rem 0', borderBottom: '1px solid var(--color-border)' }}>
                 <div className="container">
-
-                    {/* Public Header */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
-                                </div>
-                                <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <AlertCircle size={16} color="var(--color-accent)" />
-                                    Live inventory from Frazer DMS
-                                    {lastSyncTime && ` • Synced: ${lastSyncTime}`}
-                                </p>
-                            </div>
+                    {/* Header */}
+                    <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <h1 style={{ marginBottom: '0.5rem' }}>Digital Showroom</h1>
+                            <p style={{ fontSize: '0.875rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <AlertCircle size={16} color="var(--color-accent)" />
+                                Live Inventory
+                                {lastSyncTime && ` • Synced: ${lastSyncTime}`}
+                            </p>
                         </div>
+                        <button onClick={handleDealerLogin} style={{ opacity: 0.3, fontSize: '0.7rem', border: 'none', background: 'none', cursor: 'pointer' }}>
+                            Start Engine
+                        </button>
                     </div>
 
-                    {/* ACTIVE FILTERS BAR */}
+                    {/* Filters */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -380,29 +288,23 @@ const InventoryLive = () => {
                         marginBottom: '2rem',
                         boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
                     }}>
-                        {/* 1. Global Search */}
                         <div style={{ position: 'relative' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'block' }}>Search</label>
-                            <div style={{ position: 'relative' }}>
-                                <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-                                <input
-                                    type="text"
-                                    placeholder="Make, Model, VIN..."
-                                    value={filter}
-                                    onChange={(e) => setFilter(e.target.value)}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                                        border: '1px solid #d1d5db',
-                                        borderRadius: '0.375rem',
-                                        outline: 'none',
-                                        fontSize: '0.9rem'
-                                    }}
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                placeholder="Make, Model, VIN..."
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '0.375rem',
+                                    outline: 'none',
+                                    fontSize: '0.9rem'
+                                }}
+                            />
                         </div>
-
-                        {/* 2. Max Price */}
                         <div>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
                                 <span>Max Price</span>
@@ -411,34 +313,15 @@ const InventoryLive = () => {
                             <input
                                 type="range"
                                 min="1000"
-                                max="50000"
-                                step="500"
+                                max="100000"
+                                step="1000"
                                 value={priceRange}
-                                onChange={(e) => setPriceRange(parseInt(e.target.value))}
+                                onChange={(e) => setPriceRange(parseInt(e.target.value) || 50000)}
                                 style={{ width: '100%', accentColor: 'var(--color-primary)', height: '2rem' }}
                             />
                         </div>
-
-                        {/* 3. Max Mileage */}
                         <div>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Max Mileage</span>
-                                <span style={{ color: 'var(--color-primary)' }}>{maxMileage.toLocaleString()} mi</span>
-                            </label>
-                            <input
-                                type="range"
-                                min="50000"
-                                max="300000"
-                                step="10000"
-                                value={maxMileage}
-                                onChange={(e) => setMaxMileage(parseInt(e.target.value))}
-                                style={{ width: '100%', accentColor: 'var(--color-primary)', height: '2rem' }}
-                            />
-                        </div>
-
-                        {/* 4. Sort By */}
-                        <div>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'block' }}>Sort Inventory</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem', display: 'block' }}>Sort</label>
                             <select
                                 onChange={handleSortChange}
                                 style={{
@@ -454,13 +337,11 @@ const InventoryLive = () => {
                                 <option value="retail-desc">Price: High to Low</option>
                                 <option value="mileage-asc">Mileage: Low to High</option>
                                 <option value="year-desc">Year: Newest First</option>
-                                <option value="year-asc">Year: Oldest First</option>
                             </select>
                         </div>
                     </div>
 
-
-                    {/* Content View */}
+                    {/* Grid */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -470,9 +351,7 @@ const InventoryLive = () => {
                         {filteredCars.map((car) => (
                             <Link
                                 to={car.isSold ? '#' : `/vehicle/${car.stockNumber}`}
-                                key={car.stockNumber || car.vin}
-                                state={car.isSold ? null : { vehicle: car }}
-                                onClick={(e) => car.isSold && e.preventDefault()}
+                                key={car.id || car.vin || car.stockNumber}
                                 style={{
                                     textDecoration: 'none',
                                     color: 'inherit',
@@ -486,28 +365,9 @@ const InventoryLive = () => {
                                     backgroundColor: 'white',
                                     overflow: 'hidden',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    borderRadius: '0.5rem'
                                 }}>
-                                    {/* SOLD OVERLAY */}
-                                    {car.isSold && (
-                                        <div style={{
-                                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                                            zIndex: 20,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                        }}>
-                                            <div style={{
-                                                backgroundColor: '#ef4444', color: 'white',
-                                                fontSize: '2rem', fontWeight: '900',
-                                                padding: '0.5rem 3rem', transform: 'rotate(-15deg)',
-                                                border: '4px solid white',
-                                                boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                                            }}>
-                                                SOLD
-                                            </div>
-                                        </div>
-                                    )}
-                                    {/* Image Area */}
                                     <div style={{ height: '200px', backgroundColor: '#eee', position: 'relative' }}>
                                         {car.imageUrls && car.imageUrls.length > 0 ? (
                                             <img
@@ -521,8 +381,6 @@ const InventoryLive = () => {
                                                 No Photo
                                             </div>
                                         )}
-
-                                        {/* Price Tag */}
                                         <div style={{
                                             position: 'absolute',
                                             bottom: 0,
@@ -535,12 +393,11 @@ const InventoryLive = () => {
                                         }}>
                                             ${safeFloat(car.retail).toLocaleString()}
                                         </div>
-
-                                        {/* Garage Heart */}
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                toggleGarage(car);
+                                                e.stopPropagation();
+                                                if (car.id || car.stockNumber) toggleGarage(car);
                                             }}
                                             style={{
                                                 position: 'absolute',
@@ -555,14 +412,12 @@ const InventoryLive = () => {
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 cursor: 'pointer',
-                                                color: isInGarage(car.stockNumber) ? '#ef4444' : '#ccc'
+                                                color: isInGarage(car.id || car.stockNumber) ? '#ef4444' : '#ccc'
                                             }}
                                         >
-                                            <Heart size={20} fill={isInGarage(car.stockNumber) ? '#ef4444' : 'none'} />
+                                            <Heart size={20} fill={isInGarage(car.id || car.stockNumber) ? '#ef4444' : 'none'} />
                                         </button>
                                     </div>
-
-                                    {/* Details Area */}
                                     <div style={{ padding: '1.5rem' }}>
                                         <div style={{ color: '#666', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
                                             {car.year}
@@ -570,15 +425,11 @@ const InventoryLive = () => {
                                         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: 'var(--color-text)' }}>
                                             {car.make} {car.model} {car.trim}
                                         </h3>
-
                                         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#888', marginBottom: '1rem' }}>
                                             <span>{safeInt(car.mileage).toLocaleString()} miles</span>
                                             <span>•</span>
                                             <span>Stock #{car.stockNumber}</span>
                                         </div>
-
-                                        {/* Grade Badge */}
-                                        {/* Grade Badge */}
                                         {car.aiGrade && (
                                             <div style={{
                                                 display: 'inline-flex',
@@ -589,11 +440,10 @@ const InventoryLive = () => {
                                                 padding: '0.25rem 0.5rem',
                                                 borderRadius: '4px',
                                                 fontSize: '0.75rem',
-                                                fontWeight: 800,
-                                                border: car.aiGrade.overallGrade ? '1px solid #bbf7d0' : 'none'
+                                                fontWeight: 800
                                             }}>
                                                 <Shield size={12} fill={car.aiGrade.overallGrade ? "#166534" : "#ccc"} />
-                                                {car.aiGrade.overallGrade ? `Grade: ${car.aiGrade.overallGrade}` : 'Graded (Reviewing)'}
+                                                {car.aiGrade.overallGrade ? `Grade: ${car.aiGrade.overallGrade}` : 'Graded'}
                                             </div>
                                         )}
                                     </div>
@@ -601,7 +451,7 @@ const InventoryLive = () => {
                             </Link>
                         ))}
                     </div>
-                </div> {/* End container */}
+                </div>
             </section>
         </div>
     );
