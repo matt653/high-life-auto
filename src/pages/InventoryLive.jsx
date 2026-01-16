@@ -228,6 +228,7 @@ const InventoryLive = () => {
                     vin: car.vin,
                     model: car.model,
                     comments: car.comments,
+                    mileage: car.mileage,
 
                     // Ensure ID stability
                     id: enhancement.id || car.id
@@ -628,7 +629,7 @@ const InventoryLive = () => {
                                         </h3>
 
                                         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#888', marginBottom: '1rem' }}>
-                                            <span>{parseInt(car.mileage).toLocaleString()} miles</span>
+                                            <span>{parseInt(car.mileage?.replace(/\D/g, '') || 0).toLocaleString()} miles</span>
                                             <span>•</span>
                                             <span>Stock #{car.stockNumber}</span>
                                         </div>
