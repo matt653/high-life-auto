@@ -302,22 +302,31 @@ const InventoryLive = () => {
 
     // --- Filtering Logic ---
     const filteredCars = useMemo(() => {
+        const safeFloat = (v) => {
+            if (typeof v === 'number') return v;
+            return parseFloat(String(v || '0').replace(/[^0-9.-]/g, '')) || 0;
+        };
+        const safeInt = (v) => {
+            if (typeof v === 'number') return v;
+            return parseInt(String(v || '0').replace(/\D/g, '')) || 0;
+        };
+
         return vehicles.filter(car =>
             (car.make?.toLowerCase().includes(filter.toLowerCase()) ||
                 car.model?.toLowerCase().includes(filter.toLowerCase()) ||
                 car.year?.toString().includes(filter) ||
                 car.stockNumber?.toLowerCase().includes(filter.toLowerCase())) &&
-            (parseFloat(car.retail || '0') <= priceRange) &&
-            (parseInt(car.mileage?.replace(/\D/g, '') || 0) <= maxMileage)
+            (safeFloat(car.retail) <= priceRange) &&
+            (safeInt(car.mileage) <= maxMileage)
         ).sort((a, b) => {
             let valA, valB;
 
             if (sortKey === 'retail') {
-                valA = parseFloat(a.retail) || 0;
-                valB = parseFloat(b.retail) || 0;
+                valA = safeFloat(a.retail);
+                valB = safeFloat(b.retail);
             } else if (sortKey === 'mileage') {
-                valA = parseInt(a.mileage?.replace(/\D/g, '') || 0);
-                valB = parseInt(b.mileage?.replace(/\D/g, '') || 0);
+                valA = safeInt(a.mileage);
+                valB = safeInt(b.mileage);
             } else if (sortKey === 'year') {
                 valA = parseInt(a.year) || 0;
                 valB = parseInt(b.year) || 0;
@@ -629,7 +638,7 @@ const InventoryLive = () => {
                                         </h3>
 
                                         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#888', marginBottom: '1rem' }}>
-                                            <span>{parseInt(car.mileage?.replace(/\D/g, '') || 0).toLocaleString()} miles</span>
+                                            <span>{parseInt(String(car.mileage || '0').replace(/\D/g, ''))?.toLocaleString()} miles</span>
                                             <span>•</span>
                                             <span>Stock #{car.stockNumber}</span>
                                         </div>
