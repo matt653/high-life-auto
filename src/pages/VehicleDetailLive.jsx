@@ -6,7 +6,7 @@ import { db } from '../apps/ChatBot/services/firebase';
 
 import { useGarage } from '../context/GarageContext';
 
-const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
+const DEFAULT_CSV_URL = "/frazer-inventory-updated.csv";
 
 const parseCSV = (csv) => {
     const lines = csv.trim().split('\n');
