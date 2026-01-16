@@ -15,6 +15,17 @@ import { collection, onSnapshot, doc, setDoc, query, where, getDocs } from 'fire
 // Default CSV URL provided in the original tool
 const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
 
+// Helper functions for safe number parsing (Moved to module scope)
+const safeFloat = (v) => {
+    if (typeof v === 'number') return v;
+    return parseFloat(String(v || '0').replace(/[^0-9.-]/g, '')) || 0;
+};
+
+const safeInt = (v) => {
+    if (typeof v === 'number') return v;
+    return parseInt(String(v || '0').replace(/\D/g, '')) || 0;
+};
+
 const parseCSV = (csv) => {
     // Robust CSV Parser that handles quoted commas and newlines correctly
     const lines = csv.trim().split(/\r?\n/);
@@ -300,23 +311,14 @@ const InventoryLive = () => {
     }, [googleSheetUrl, lastSyncTime]);
 
 
-    // --- Filtering Logic ---
-    // Defined safely outside useMemo to be used in Render as well
-    const safeFloat = (v) => {
-        if (typeof v === 'number') return v;
-        return parseFloat(String(v || '0').replace(/[^0-9.-]/g, '')) || 0;
-    };
-    const safeInt = (v) => {
-        if (typeof v === 'number') return v;
-        return parseInt(String(v || '0').replace(/\D/g, '')) || 0;
-    };
+
 
     const filteredCars = useMemo(() => {
         return vehicles.filter(car =>
-            (car.make?.toLowerCase().includes(filter.toLowerCase()) ||
-                car.model?.toLowerCase().includes(filter.toLowerCase()) ||
-                car.year?.toString().includes(filter) ||
-                car.stockNumber?.toLowerCase().includes(filter.toLowerCase())) &&
+            ((car.make || '').toLowerCase().includes(filter.toLowerCase()) ||
+                (car.model || '').toLowerCase().includes(filter.toLowerCase()) ||
+                (car.year || '').toString().includes(filter) ||
+                (car.stockNumber || '').toLowerCase().includes(filter.toLowerCase())) &&
             (safeFloat(car.retail) <= priceRange) &&
             (safeInt(car.mileage) <= maxMileage)
         ).sort((a, b) => {
