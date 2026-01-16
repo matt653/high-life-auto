@@ -541,7 +541,11 @@ const VehicleDetailLive = () => {
                             </div>
                             <h1 style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>{car.year} {car.make} {car.model}</h1>
                             <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#666' }}>
-                                {car.mileage > 0 ? `${car.mileage.toLocaleString()} Miles` : 'Mileage TBD'} • VIN: {car.vin}
+                                {(() => {
+                                    const safeInt = (v) => parseInt(String(v || '0').replace(/\D/g, '')) || 0;
+                                    const m = safeInt(car.mileage);
+                                    return m > 0 ? `${m.toLocaleString()} Miles` : 'Mileage TBD';
+                                })()} • VIN: {car.vin}
                             </p>
 
                             {/* Special Online Notes (Manager Override) */}

@@ -301,16 +301,17 @@ const InventoryLive = () => {
 
 
     // --- Filtering Logic ---
-    const filteredCars = useMemo(() => {
-        const safeFloat = (v) => {
-            if (typeof v === 'number') return v;
-            return parseFloat(String(v || '0').replace(/[^0-9.-]/g, '')) || 0;
-        };
-        const safeInt = (v) => {
-            if (typeof v === 'number') return v;
-            return parseInt(String(v || '0').replace(/\D/g, '')) || 0;
-        };
+    // Defined safely outside useMemo to be used in Render as well
+    const safeFloat = (v) => {
+        if (typeof v === 'number') return v;
+        return parseFloat(String(v || '0').replace(/[^0-9.-]/g, '')) || 0;
+    };
+    const safeInt = (v) => {
+        if (typeof v === 'number') return v;
+        return parseInt(String(v || '0').replace(/\D/g, '')) || 0;
+    };
 
+    const filteredCars = useMemo(() => {
         return vehicles.filter(car =>
             (car.make?.toLowerCase().includes(filter.toLowerCase()) ||
                 car.model?.toLowerCase().includes(filter.toLowerCase()) ||
@@ -599,7 +600,7 @@ const InventoryLive = () => {
                                             fontWeight: 800,
                                             fontSize: '1.25rem'
                                         }}>
-                                            ${parseFloat(car.retail).toLocaleString()}
+                                            ${safeFloat(car.retail).toLocaleString()}
                                         </div>
 
                                         {/* Garage Heart */}
@@ -638,7 +639,7 @@ const InventoryLive = () => {
                                         </h3>
 
                                         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#888', marginBottom: '1rem' }}>
-                                            <span>{parseInt(String(car.mileage || '0').replace(/\D/g, ''))?.toLocaleString()} miles</span>
+                                            <span>{safeInt(car.mileage).toLocaleString()} miles</span>
                                             <span>•</span>
                                             <span>Stock #{car.stockNumber}</span>
                                         </div>
