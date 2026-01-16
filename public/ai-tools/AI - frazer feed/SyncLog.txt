@@ -217,3 +217,123 @@
 [2026-01-15 12:55:36] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
 [2026-01-15 12:55:36] Sync cycle complete.
 [2026-01-15 12:55:36] Next run scheduled for 01/15/2026 13:10:36 (in 0h 15m)
+[2026-01-15 13:10:36] Starting scheduled sync cycle...
+[2026-01-15 13:10:36] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 13:10:36] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 13:10:36] Sync cycle complete.
+[2026-01-15 13:10:36] Next run scheduled for 01/15/2026 13:25:36 (in 0h 15m)
+[2026-01-15 13:25:36] Starting scheduled sync cycle...
+[2026-01-15 13:25:36] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 13:25:36] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 13:25:36] Sync cycle complete.
+[2026-01-15 13:25:36] Next run scheduled for 01/15/2026 13:40:36 (in 0h 15m)
+[2026-01-15 13:40:36] Starting scheduled sync cycle...
+[2026-01-15 13:40:36] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 13:40:36] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 13:40:37] Sync cycle complete.
+[2026-01-15 13:40:37] Next run scheduled for 01/15/2026 13:55:37 (in 0h 15m)
+[2026-01-15 13:55:37] Starting scheduled sync cycle...
+[2026-01-15 13:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 13:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 13:55:37] Sync cycle complete.
+[2026-01-15 13:55:37] Next run scheduled for 01/15/2026 14:10:37 (in 0h 15m)
+[2026-01-15 14:10:37] Starting scheduled sync cycle...
+[2026-01-15 14:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 14:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 14:10:37] Sync cycle complete.
+[2026-01-15 14:10:37] Next run scheduled for 01/15/2026 14:25:37 (in 0h 15m)
+[2026-01-15 14:25:37] Starting scheduled sync cycle...
+[2026-01-15 14:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 14:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 14:25:37] Sync cycle complete.
+[2026-01-15 14:25:37] Next run scheduled for 01/15/2026 14:40:37 (in 0h 15m)
+[2026-01-15 14:40:37] Starting scheduled sync cycle...
+[2026-01-15 14:40:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 14:40:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 14:40:37] Sync cycle complete.
+[2026-01-15 14:40:37] Next run scheduled for 01/15/2026 14:55:37 (in 0h 15m)
+[2026-01-15 14:55:37] Starting scheduled sync cycle...
+[2026-01-15 14:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 14:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 14:55:37] Sync cycle complete.
+[2026-01-15 14:55:37] Next run scheduled for 01/15/2026 15:10:37 (in 0h 15m)
+[2026-01-15 15:10:37] Starting scheduled sync cycle...
+[2026-01-15 15:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 15:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 15:10:37] Sync cycle complete.
+[2026-01-15 15:10:37] Next run scheduled for 01/15/2026 15:25:37 (in 0h 15m)
+[2026-01-15 15:25:37] Starting scheduled sync cycle...
+[2026-01-15 15:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 15:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 15:25:37] Sync cycle complete.
+[2026-01-15 15:25:37] Next run scheduled for 01/15/2026 15:40:37 (in 0h 15m)
+[2026-01-15 15:40:37] Starting scheduled sync cycle...
+[2026-01-15 15:40:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 15:40:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 15:40:37] Sync cycle complete.
+[2026-01-15 15:40:37] Next run scheduled for 01/15/2026 15:55:37 (in 0h 15m)
+[2026-01-15 15:55:37] Starting scheduled sync cycle...
+[2026-01-15 15:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 15:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 15:55:37] Sync cycle complete.
+[2026-01-15 15:55:37] Next run scheduled for 01/15/2026 16:10:37 (in 0h 15m)
+[2026-01-15 16:10:37] Starting scheduled sync cycle...
+[2026-01-15 16:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 16:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 16:10:37] Sync cycle complete.
+[2026-01-15 16:10:37] Next run scheduled for 01/15/2026 16:25:37 (in 0h 15m)
+[2026-01-15 16:25:37] Starting scheduled sync cycle...
+[2026-01-15 16:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 16:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 16:25:37] Sync cycle complete.
+[2026-01-15 16:25:37] Next run scheduled for 01/15/2026 16:40:37 (in 0h 15m)
+[2026-01-15 16:40:37] Starting scheduled sync cycle...
+[2026-01-15 16:40:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 16:40:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 16:40:37] Sync cycle complete.
+[2026-01-15 16:40:37] Next run scheduled for 01/15/2026 16:55:37 (in 0h 15m)
+[2026-01-15 16:55:37] Starting scheduled sync cycle...
+[2026-01-15 16:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 16:55:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 16:55:37] Sync cycle complete.
+[2026-01-15 16:55:37] Next run scheduled for 01/15/2026 17:10:37 (in 0h 15m)
+[2026-01-15 17:10:37] Starting scheduled sync cycle...
+[2026-01-15 17:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 17:10:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 17:10:37] Sync cycle complete.
+[2026-01-15 17:10:37] Next run scheduled for 01/15/2026 17:25:37 (in 0h 15m)
+[2026-01-15 17:25:37] Starting scheduled sync cycle...
+[2026-01-15 17:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 17:25:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 17:25:37] Sync cycle complete.
+[2026-01-15 17:25:37] Next run scheduled for 01/15/2026 17:40:37 (in 0h 15m)
+[2026-01-15 17:40:37] Starting scheduled sync cycle...
+[2026-01-15 17:40:37] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 17:40:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 17:40:38] Sync cycle complete.
+[2026-01-15 17:40:38] Next run scheduled for 01/15/2026 17:55:38 (in 0h 15m)
+[2026-01-15 17:55:38] Starting scheduled sync cycle...
+[2026-01-15 17:55:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 17:55:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 17:55:38] Sync cycle complete.
+[2026-01-15 17:55:38] Next run scheduled for 01/15/2026 18:10:38 (in 0h 15m)
+[2026-01-15 18:10:38] Starting scheduled sync cycle...
+[2026-01-15 18:10:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 18:10:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 18:10:38] Sync cycle complete.
+[2026-01-15 18:10:38] Next run scheduled for 01/15/2026 18:25:38 (in 0h 15m)
+[2026-01-15 18:25:38] Starting scheduled sync cycle...
+[2026-01-15 18:25:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 18:25:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 18:25:38] Sync cycle complete.
+[2026-01-15 18:25:38] Next run scheduled for 01/15/2026 18:40:38 (in 0h 15m)
+[2026-01-15 18:40:38] Starting scheduled sync cycle...
+[2026-01-15 18:40:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 18:40:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 18:40:38] Sync cycle complete.
+[2026-01-15 18:40:38] Next run scheduled for 01/15/2026 18:55:38 (in 0h 15m)
+[2026-01-15 18:55:38] Starting scheduled sync cycle...
+[2026-01-15 18:55:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-15 18:55:38] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-15 18:55:38] Sync cycle complete.
+[2026-01-15 18:55:38] Next run scheduled for 01/16/2026 08:00:00 (in 13h 4m)

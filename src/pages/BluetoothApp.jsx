@@ -32,8 +32,16 @@ import { VerificationItem } from '../apps/Bluetooth/components/VerificationItem'
 
 // --- CONFIG ---
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const SERVICE_UUID = '000018f0-0000-1000-8000-00805f9b34fb';
-const CHAR_UUID = '00002af0-0000-1000-8000-00805f9b34fb';
+
+// Common OBD-II BLE Service UUIDs
+const OPTIONAL_SERVICES = [
+    '000018f0-0000-1000-8000-00805f9b34fb', // Generic
+    '0000fff0-0000-1000-8000-00805f9b34fb', // Vgate / ELM327 BLE / iCar
+    '0000ffe0-0000-1000-8000-00805f9b34fb', // HM-10
+    '6e400001-b5a3-f393-e0a9-e50e24dcca9e', // Nordic UART (OBDLink MX+ LE often uses specific UARTs)
+    '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC
+    '00001101-0000-1000-8000-00805f9b34fb'  // Serial Port Profile (Rarely works in Web BLE but worth listing)
+];
 
 const BluetoothApp = () => {
     // Mode State: 'idle' | 'live' | 'sensory' | 'results' | 'garage'
@@ -63,11 +71,16 @@ const BluetoothApp = () => {
 
     const connectBluetooth = async () => {
         try {
+            console.log("Requesting Bluetooth Device...");
             const dev = await navigator.bluetooth.requestDevice({
                 acceptAllDevices: true,
-                optionalServices: [SERVICE_UUID]
+                optionalServices: OPTIONAL_SERVICES
             });
+
+            console.log("Device selected:", dev.name);
             const server = await dev.gatt.connect();
+            console.log("GATT Connected");
+
             setDevice(dev);
             setIsScanning(true);
             setMode('live');
@@ -77,7 +90,21 @@ const BluetoothApp = () => {
             simulateObdStream();
 
         } catch (err) {
-            console.warn("Bluetooth failed, falling back to DEMO mode for review", err);
+            console.warn("Bluetooth connection failed:", err);
+
+            // User-facing Error Handling
+            let msg = "Could not connect to Bluetooth device.\n\n";
+            if (err.name === 'NotFoundError') {
+                msg += "• No device was selected.\n";
+            } else if (err.name === 'SecurityError') {
+                msg += "• Security restriction. Ensure you are using HTTPS or Localhost.\n";
+            } else {
+                msg += "• If using OBDLink MX+ on Windows: Unpair it from Windows Settings first, then try again here.\n";
+                msg += "• Ensure your dongle supports Bluetooth LE (Low Energy).\n";
+            }
+
+            alert(msg + "\nStarting DEMO MODE for review.");
+
             setIsDemo(true);
             setMode('live');
             simulateObdStream();
