@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { ChevronLeft, Info, Play, CheckCircle2, Award, AlertTriangle, Heart, AlertCircle, ClipboardCheck } from 'lucide-react';
+import { ChevronLeft, Info, Play, AlertTriangle, Heart, AlertCircle } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../apps/ChatBot/services/firebase';
 
@@ -57,188 +57,6 @@ const parseCSV = (csv) => {
     });
 };
 
-const InteractiveGrader = ({ gradeData }) => {
-    const [userWeights, setUserWeights] = useState({});
-    const [personal, setPersonal] = useState({ score: '0.0', letter: 'N/A' });
-    const [isExpanded, setIsExpanded] = useState(true);
-
-    // Initialize weights
-    useEffect(() => {
-        if (gradeData?.categories) {
-            const keys = Object.keys(gradeData.categories);
-            const initial = {};
-            // Divide 100% among categories (e.g., 4 categories = 25% each)
-            const split = Math.floor(100 / keys.length);
-            const remainder = 100 - (split * keys.length);
-
-            keys.forEach((k, i) => {
-                initial[k] = split + (i === 0 ? remainder : 0);
-            });
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setUserWeights(initial);
-        }
-    }, [gradeData]);
-
-    const handleSliderChange = (key, newValue) => {
-        setUserWeights(prev => {
-            const oldValue = prev[key];
-            const diff = newValue - oldValue;
-            if (diff === 0) return prev;
-
-            const next = { ...prev, [key]: newValue };
-            const keys = Object.keys(prev);
-            const otherKeys = keys.filter(k => k !== key);
-
-            // Distribute the negative difference among others
-            // If I increase this by 10, total of others must decrease by 10
-            const totalOtherWeight = otherKeys.reduce((sum, k) => sum + prev[k], 0);
-
-            otherKeys.forEach(k => {
-                const share = totalOtherWeight > 0 ? (prev[k] / totalOtherWeight) : (1 / otherKeys.length);
-                // We subtract the diff proportionally
-                // Example: diff = +10. We subtract 10 from others.
-                let adjustment = Math.round(diff * share);
-
-                next[k] = Math.max(0, prev[k] - adjustment);
-            });
-
-            // Force Sum to 100 (Correction for rounding)
-            const newTotal = Object.values(next).reduce((a, b) => a + b, 0);
-            if (newTotal !== 100 && otherKeys.length > 0) {
-                const error = 100 - newTotal;
-                next[otherKeys[0]] += error; // Dump error into first available bin
-            }
-            return next;
-        });
-    };
-
-    // Calculate Personal Grade
-    useEffect(() => {
-        if (!gradeData?.categories) return;
-
-        let totalWeightedScore = 0;
-        let totalPossibleWeight = 0;
-
-        Object.entries(gradeData.categories).forEach(([key, cat]) => {
-            const weight = userWeights[key] || 50;
-
-            // Normalize score to 0-5 scale
-            let score = 2.5; // default C
-            if (typeof cat.score === 'number') {
-                score = cat.score;
-                // Handle legacy 0-100 scores if present
-                if (score > 5) score = score / 20;
-            } else if (cat.grade === 'A') score = 4.5;
-            else if (cat.grade === 'B') score = 3.5;
-            else if (cat.grade === 'C') score = 2.5;
-            else if (cat.grade === 'D') score = 1.5;
-            else if (cat.grade === 'F') score = 0.5;
-
-            totalWeightedScore += (score * weight);
-            totalPossibleWeight += weight;
-        });
-
-        if (totalPossibleWeight === 0) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setPersonal({ score: '0.0', letter: 'N/A' });
-            return;
-        }
-
-        const finalScore = totalWeightedScore / totalPossibleWeight;
-        const roundedScore = parseFloat(finalScore.toFixed(1));
-
-        // Map 0-5 to Letter (User Rubric: 2.x=C, 3.x=B, 4.x=A)
-        let letter = 'F';
-        if (roundedScore >= 4.8) letter = 'A+';
-        else if (roundedScore >= 4.0) letter = 'A'; // 4.0 - 4.7
-        else if (roundedScore >= 3.8) letter = 'B+';
-        else if (roundedScore >= 3.0) letter = 'B'; // 3.0 - 3.7
-        else if (roundedScore >= 2.8) letter = 'C+';
-        else if (roundedScore >= 2.0) letter = 'C'; // 2.0 - 2.7
-        else if (roundedScore >= 1.0) letter = 'D'; // 1.0 - 1.9
-
-        setPersonal({
-            score: roundedScore.toFixed(1),
-            letter
-        });
-
-    }, [userWeights, gradeData]);
-
-    if (!gradeData?.categories) return null;
-
-    return (
-        <div style={{ marginTop: '3rem', padding: '0', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '0.5rem', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-            <div
-                style={{
-                    padding: '1rem',
-                    backgroundColor: '#f8fafc',
-                    borderBottom: '1px solid #e2e8f0',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                }}
-                onClick={() => setIsExpanded(!isExpanded)}
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                        Try It Yourself: Interactive Grading Scale
-                    </h3>
-                </div>
-                <span style={{ fontSize: '1.5rem', color: '#94a3b8' }}>{isExpanded ? '−' : '+'}</span>
-            </div>
-
-            {isExpanded && (
-                <div style={{ padding: '1.5rem' }}>
-                    <p style={{ color: '#475569', marginBottom: '2rem', fontSize: '0.9rem' }}>
-                        Adjust the sliders to change how much each category matters to <strong>YOU</strong>.
-                        Don't care about curb appeal? Slide "Body Condition" down. Care a lot about reliability? Slide it up!
-                    </p>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                        {/* Sliders */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            {Object.entries(gradeData.categories).map(([key, cat]) => (
-                                <div key={key}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', color: '#64748b' }}>
-                                        <span>{cat.name || key.replace(/_/g, ' ')}</span>
-                                        <span style={{ color: userWeights[key] > 0 ? '#0f172a' : '#94a3b8' }}>{userWeights[key] || 0}%</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        value={userWeights[key] || 0}
-                                        onChange={(e) => handleSliderChange(key, parseInt(e.target.value))}
-                                        style={{ width: '100%', accentColor: '#2563eb', cursor: 'pointer' }}
-                                    />
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                                        <span>0%</span>
-                                        <span>100%</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Result Card */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#eff6ff', borderRadius: '1rem', border: '2px solid #bfdbfe', padding: '2rem' }}>
-                            <h4 style={{ color: '#1e3a8a', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.875rem', letterSpacing: '0.05em', marginBottom: '1rem' }}>Your Personal Grade</h4>
-                            <div style={{ fontSize: '6rem', fontWeight: 900, lineHeight: 1, color: '#2563eb', marginBottom: '0.5rem' }}>{personal.letter}</div>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>{personal.score}</span>
-                                <span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 600 }}>/ 5.0 GPA</span>
-                            </div>
-                            <p style={{ fontSize: '0.75rem', color: '#1e40af', marginTop: '1rem', opacity: 0.8, maxWidth: '200px', textAlign: 'center' }}>
-                                Based on not just the car's condition, but your personal priorities.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
 const VehicleDetailLive = () => {
     const { id } = useParams(); // 'id' here corresponds to the Stock Number
     const location = useLocation();
@@ -249,8 +67,6 @@ const VehicleDetailLive = () => {
     const garageContext = useGarage();
     const toggleGarage = garageContext?.toggleGarage || (() => console.warn('Garage Context missing'));
     const isInGarage = garageContext?.isInGarage || (() => false);
-
-    const [vehicleGrade, setVehicleGrade] = useState(null);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -286,7 +102,6 @@ const VehicleDetailLive = () => {
                     story: foundCar.marketingDescription || foundCar.comments || "No description available.",
                     price: parseFloat(foundCar.retail) || 0,
                 });
-                if (foundCar.aiGrade) setVehicleGrade(foundCar.aiGrade);
                 setLoading(false);
                 return;
             }
@@ -338,7 +153,6 @@ const VehicleDetailLive = () => {
                                 model: foundCar.model,             // Model (Safe to protect)
 
                                 // Keep Backend fields if they exist
-                                aiGrade: liveData.aiGrade || foundCar.aiGrade,
                                 marketingDescription: liveData.marketingDescription || foundCar.marketingDescription,
                                 blemishes: liveData.blemishes || foundCar.blemishes,
                                 websiteNotes: liveData.websiteNotes || foundCar.websiteNotes,
@@ -363,9 +177,6 @@ const VehicleDetailLive = () => {
                     price: parseFloat(foundCar.retail) || 0,
                 });
 
-                if (foundCar.aiGrade) {
-                    setVehicleGrade(foundCar.aiGrade);
-                }
             } else {
                 console.log("Vehicle not found in data");
                 setCar(null);
@@ -376,13 +187,6 @@ const VehicleDetailLive = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const getGradeColor = (grade) => {
-        if (!grade) return '#999';
-        if (grade === 'A' || grade === 'A+') return 'var(--color-accent)';
-        if (grade === 'B' || grade === 'B+') return 'var(--color-gold)';
-        return '#ff6b6b';
     };
 
     const getEmbedUrl = (url) => {
@@ -604,28 +408,6 @@ const VehicleDetailLive = () => {
                                 />
                             </div>
 
-                            {/* Consumer Education */}
-                            {(vehicleGrade?.buyerTips || vehicleGrade?.consumerEducation) && (
-                                <div style={{
-                                    backgroundColor: '#fff3cd',
-                                    border: '2px solid #ffc107',
-                                    padding: '1.5rem',
-                                    marginBottom: '2rem'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                                        <AlertTriangle size={24} color="#856404" />
-                                        <h3 style={{ margin: 0, color: '#856404' }}>Miriam's Mechanic Notes: Common Known Issues</h3>
-                                    </div>
-                                    <p style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '1rem', fontStyle: 'italic' }}>
-                                        (These are common things for this model year/engine, not necessarily present on this specific car. We checked them!)
-                                    </p>
-                                    <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#856404' }}>
-                                        {(vehicleGrade?.buyerTips || vehicleGrade?.consumerEducation || []).map((tip, i) => (
-                                            <li key={i} style={{ marginBottom: '0.5rem' }}>{tip}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
 
                             <div style={{
                                 display: 'grid',
@@ -677,112 +459,6 @@ const VehicleDetailLive = () => {
                                 Watch More on YouTube
                             </a>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* FULL WIDTH REPORT CARD SECTION */}
-            {vehicleGrade && (
-                <section style={{ backgroundColor: '#fff', padding: '3rem 0', borderTop: '4px solid var(--color-primary)' }}>
-                    <div className="container">
-                        <div style={{
-                            border: '4px double #1f2937', // Double border for report card look
-                            padding: '2rem',
-                            backgroundColor: '#fffdf5', // Slight paper tint
-                            position: 'relative'
-                        }}>
-                            {/* Report Card Header */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #1f2937', paddingBottom: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <ClipboardCheck size={48} color="#1f2937" />
-                                    <div>
-                                        <h2 style={{ fontSize: '2rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px', color: '#1f2937' }}>Official Report Card</h2>
-                                        <p style={{ margin: 0, fontFamily: 'monospace', color: '#666' }}>ID: {car.stockNumber} | DATE: {new Date().toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-
-                                <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Final Grade</div>
-                                        <div style={{ fontSize: '3rem', fontWeight: '900', color: getGradeColor(vehicleGrade.overallGrade), lineHeight: 1 }}>
-                                            {vehicleGrade.overallGrade}
-                                        </div>
-                                    </div>
-                                    {/* Stamp Look */}
-                                    <div style={{
-                                        border: `3px solid ${getGradeColor(vehicleGrade.overallGrade)}`,
-                                        color: getGradeColor(vehicleGrade.overallGrade),
-                                        padding: '0.5rem 1rem',
-                                        transform: 'rotate(-5deg)',
-                                        fontWeight: '900',
-                                        fontSize: '1.25rem',
-                                        textTransform: 'uppercase',
-                                        opacity: 0.8
-                                    }}>
-                                        Verified
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Report Card Body - Grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0', border: '1px solid #1f2937' }}>
-                                {vehicleGrade.categories && Object.entries(vehicleGrade.categories).map(([key, cat], index) => (
-                                    <div key={key} style={{
-                                        padding: '1.5rem',
-                                        borderRight: '1px solid #1f2937',
-                                        borderBottom: '1px solid #1f2937',
-                                        backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb'
-                                    }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                            <h3 style={{ margin: 0, textTransform: 'uppercase', fontSize: '1rem', fontWeight: 800 }}>{cat.name || key}</h3>
-                                            <span style={{ fontWeight: 900, color: getGradeColor(cat.grade), fontSize: '1.5rem' }}>{cat.grade}</span>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6', fontFamily: 'serif', color: '#333' }}>
-                                            {cat.reasoning}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Instructor Comments */}
-                            <div style={{ marginTop: '2rem', fontFamily: 'serif', fontStyle: 'italic', color: '#444' }}>
-                                <strong style={{ fontFamily: 'sans-serif', textTransform: 'uppercase', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem', color: '#000' }}>Instructor Comments:</strong>
-                                "{vehicleGrade.summary}"
-                            </div>
-
-                            {/* Signature Line */}
-                            <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'flex-end' }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontFamily: 'Noteworthy, "Segoe Print", sans-serif', fontSize: '1.5rem', color: '#2563eb' }}>Miriam</div>
-                                    <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0.5rem auto 0' }}></div>
-                                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>Certified Evaluator</div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        {/* Interactive Grader Section */}
-                        <InteractiveGrader gradeData={vehicleGrade} />
-
-                    </div>
-                </section>
-            )}
-
-            {/* Honest Blemishes */}
-            <section style={{ backgroundColor: '#1a1a1a', color: 'white' }}>
-                <div className="container">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
-                        <Info size={32} color="var(--color-gold)" />
-                        <div>
-                            <h2 style={{ fontSize: '2rem' }}>The Honest Blemishes</h2>
-                            <p style={{ opacity: 0.7 }}>We don't hide the character marks. Here's exactly what's not perfect.</p>
-                        </div>
-                    </div>
-
-                    <div style={{ textAlign: 'center', padding: '3rem' }}>
-                        <CheckCircle2 size={48} color="var(--color-accent)" style={{ margin: '0 auto 1rem' }} />
-                        <h3>Review the Video & Photos</h3>
-                        <p>Miriam shows you everything in the test drive video. All imperfections are visible in the photo gallery above.</p>
                     </div>
                 </div>
             </section>
