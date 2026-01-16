@@ -275,10 +275,10 @@ const BluetoothApp = () => {
                     <div className="space-y-6 animate-fade-in">
                         {/* Readout Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <StatCard icon={<Activity size={20} className="text-emerald-400" />} label="Engine RPM" value={data[data.length - 1]?.rpm.toFixed(0) || 0} unit="RPM" />
-                            <StatCard icon={<Thermometer size={20} className="text-orange-400" />} label="Coolant Temp" value={data[data.length - 1]?.coolantTemp.toFixed(0) || 0} unit="°F" />
-                            <StatCard icon={<Zap size={20} className="text-yellow-400" />} label="Battery" value={data[data.length - 1]?.voltage.toFixed(1) || 0} unit="V" />
-                            <StatCard icon={<Wind size={20} className="text-blue-400" />} label="Mass Airflow" value={data[data.length - 1]?.maf.toFixed(1) || 0} unit="g/s" />
+                            <StatCard icon={<Activity size={20} className="text-emerald-400" />} label="Engine RPM" value={(data[data.length - 1] || {}).rpm?.toFixed(0) || 0} unit="RPM" />
+                            <StatCard icon={<Thermometer size={20} className="text-orange-400" />} label="Coolant Temp" value={(data[data.length - 1] || {}).coolantTemp?.toFixed(0) || 0} unit="°F" />
+                            <StatCard icon={<Zap size={20} className="text-yellow-400" />} label="Battery" value={(data[data.length - 1] || {}).voltage?.toFixed(1) || 0} unit="V" />
+                            <StatCard icon={<Wind size={20} className="text-blue-400" />} label="Mass Airflow" value={(data[data.length - 1] || {}).maf?.toFixed(1) || 0} unit="g/s" />
                         </div>
 
                         {/* Live Chart */}
@@ -301,9 +301,16 @@ const BluetoothApp = () => {
 
                         {/* Control Deck */}
                         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur border border-white/10 p-2 rounded-2xl flex items-center gap-2 shadow-2xl z-40">
-                            <button onClick={stopScan} className="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl flex items-center gap-2 transition-all">
-                                <Square size={16} fill="white" /> STOP SCAN
-                            </button>
+                            {(isScanning && data.length === 0) ? (
+                                <div className="flex items-center gap-2 px-6 py-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                                    <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Connecting Data Stream...</span>
+                                </div>
+                            ) : (
+                                <button onClick={stopScan} className="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl flex items-center gap-2 transition-all">
+                                    <Square size={16} fill="white" /> STOP SCAN
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
