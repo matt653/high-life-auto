@@ -13,7 +13,7 @@ import { db, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
 import { collection, onSnapshot, doc, setDoc, query, where, getDocs } from 'firebase/firestore';
 
 // Default CSV URL provided in the original tool
-const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
+const DEFAULT_CSV_URL = "/frazer-inventory-updated.csv";
 
 // Helper functions for safe number parsing (Moved to module scope)
 const safeFloat = (v) => {

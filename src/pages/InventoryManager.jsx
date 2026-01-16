@@ -14,7 +14,7 @@ import { collection, onSnapshot, doc, setDoc, getDocs, deleteDoc } from 'firebas
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Default CSV URL provided in the original tool
-const DEFAULT_CSV_URL = "https://highlifeauto.com/frazer-inventory-updated.csv";
+const DEFAULT_CSV_URL = "/frazer-inventory-updated.csv";
 
 const parseCSV = (csv) => {
     // Robust CSV Parser that handles quoted commas and newlines correctly
@@ -594,6 +594,16 @@ const InventoryManager = () => {
                                 </button>
                             </div>
                         </div>
+
+                        {!isFirebaseConfigured && (
+                            <div style={{ backgroundColor: '#ef4444', color: 'white', padding: '1rem', marginBottom: '2rem', borderRadius: '0.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <AlertCircle size={24} />
+                                <div>
+                                    DATABASE DISCONNECTED: Firebase API Keys are missing or invalid.
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 'normal', opacity: 0.9 }}>AI grades and edits will NOT be saved. Please check your .env file or deployment settings.</div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Admin Toolbar */}
                         <div style={{
