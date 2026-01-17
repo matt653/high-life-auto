@@ -274,9 +274,6 @@ const InventoryLive = () => {
                                 {lastSyncTime && ` • Synced: ${lastSyncTime}`}
                             </p>
                         </div>
-                        <button onClick={handleDealerLogin} style={{ opacity: 0.3, fontSize: '0.7rem', border: 'none', background: 'none', cursor: 'pointer' }}>
-                            Start Engine
-                        </button>
                     </div>
 
                     {/* Filters */}

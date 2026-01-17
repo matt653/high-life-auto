@@ -20,7 +20,7 @@ import {
     X,
     Minimize2
 } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+
 
 import './SmartChatbot.css'; // Re-use the CSS for container/bubble styles
 
@@ -71,43 +71,9 @@ const PIPELINE_STAGES = [
 // --- AI Engine ---
 // Initialize dynamically to catch env var changes
 const fetchGeminiResponse = async (userText, systemInstruction, history = []) => {
-    try {
-        // Fallback to hardcoded key if env var fails to load
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-        if (!apiKey) throw new Error("Missing HighLife API Key");
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash", // Updated to matches available models for this API key
-            systemInstruction: systemInstruction
-        });
-
-        // Gemini API requires history to start with 'user'. 
-        // We filter out any leading 'model' messages from the history array.
-        const formattedHistory = history.map(msg => ({
-            role: msg.role === 'ai' ? 'model' : 'user',
-            parts: [{ text: msg.text }]
-        }));
-
-        // Find the index of the first 'user' message
-        const firstUserIndex = formattedHistory.findIndex(msg => msg.role === 'user');
-
-        // If no user message is found (e.g. only AI greeting), pass empty history
-        // If found, slice from that index to ensure we start with user
-        const validHistory = firstUserIndex !== -1 ? formattedHistory.slice(firstUserIndex) : [];
-
-        const chat = model.startChat({
-            history: validHistory
-        });
-
-        const result = await chat.sendMessage(userText);
-        const response = await result.response;
-        return response.text();
-    } catch (err) {
-        console.error("Gemini Error:", err);
-        return `System Error: ${err.message || "Connection Failed"}. Please contact the manager.`;
-    }
+    // Static response to replace AI logic
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Fake realistic delay
+    return "Turbo is currently offline for maintenance. Please call us at 319-372-8191.";
 };
 
 // --- Main Chatbot Component ---
