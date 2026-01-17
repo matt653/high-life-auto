@@ -55,7 +55,7 @@ function App() {
                   <Route path="/apps/bluetooth" element={<BluetoothApp />} />
                   <Route path="/apps/marketplace" element={<MarketplaceApp />} />
                   <Route path="/login" element={<StaffPortal />} />
-                  <Route path="/admin" element={<InventoryManager />} />
+                  <Route path="/rearend" element={<InventoryManager />} />
                 </Routes>
               </Suspense>
             </main>

@@ -528,14 +528,12 @@ const InventoryManager = () => {
                 // --- LOGIN SCREEN ---
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', color: 'white' }}>
                     <Lock size={64} style={{ marginBottom: '2rem', opacity: 0.5 }} />
-                    <h1 style={{ marginBottom: '2rem' }}>Staff Access Only</h1>
                     <button onClick={handleDealerLogin} style={{
-                        padding: '1rem 3rem', fontSize: '1.25rem', backgroundColor: '#2563eb', color: 'white',
-                        border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold'
+                        padding: '1rem 3rem', fontSize: '1.25rem', backgroundColor: '#334155', color: 'white',
+                        border: '1px solid #475569', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold'
                     }}>
                         Enter Password
                     </button>
-                    <Link to="/inventory" style={{ marginTop: '2rem', color: '#64748b', textDecoration: 'none' }}>← Back to Public Site</Link>
                 </div>
             ) : (
                 // --- ADMIN INTERFACE ---
@@ -550,14 +548,19 @@ const InventoryManager = () => {
                         }}>
                             <div>
                                 <h1 style={{ fontSize: '1.8rem', fontWeight: '800', margin: 0, color: '#f8fafc' }}>
-                                    Inventory Command Center
+                                    Rear End
                                 </h1>
-                                <p style={{ color: '#94a3b8', margin: '0.5rem 0 0 0', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    Targeting CSV Feed from Frazer • {vehicles.length} Vehicles Loaded
-                                </p>
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem' }}>
+                                <Link to="/inventory" target="_blank" style={{
+                                    background: '#3b82f6', border: 'none', borderRadius: '0.5rem',
+                                    color: 'white', fontWeight: '600', padding: '0.75rem 1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                    textDecoration: 'none'
+                                }}>
+                                    <Search size={16} /> Live View
+                                </Link>
+
                                 <label
                                     style={{
                                         background: '#ea580c', border: 'none', borderRadius: '0.5rem',
