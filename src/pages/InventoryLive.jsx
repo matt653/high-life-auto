@@ -31,6 +31,9 @@ const parseCSV = (csv) => {
     if (lines.length === 0) return [];
 
     const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+    const headerMap = {};
+    headers.forEach((h, i) => { headerMap[h] = i; });
+
     const result = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -55,7 +58,7 @@ const parseCSV = (csv) => {
         values.push(current.trim().replace(/^"|"$/g, ''));
 
         const get = (h) => {
-            const idx = headers.indexOf(h);
+            const idx = headerMap[h];
             return (values[idx] || "").trim();
         };
 
