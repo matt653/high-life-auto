@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { RAW_VEHICLE_CSV } from '../components/showroom/constants';
 import InventoryTable from '../components/showroom/InventoryTable';
-import VehicleEditor from '../components/showroom/VehicleEditor';
+import VehicleEditor from '../components/AutoGrader/VehicleEditor';
 import PublicInventory from '../components/showroom/PublicInventory';
 
 // CSV Helper
