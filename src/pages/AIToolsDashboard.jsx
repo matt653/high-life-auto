@@ -28,13 +28,7 @@ const AIToolsDashboard = () => {
             description: "Process Frazer CSV feeds.",
             color: "bg-green-500"
         },
-        {
-            name: "Edmunds Toolkit",
-            path: "/apps/edmunds",
-            description: "TMV Valuation & Maintenance Schedules.",
-            color: "bg-blue-600",
-            isInternal: true
-        },
+
         {
             name: "Chat Bot",
             path: "/apps/chatbot",
@@ -56,13 +50,7 @@ const AIToolsDashboard = () => {
             color: "bg-orange-500",
             isInternal: true
         },
-        {
-            name: "Bluetooth Assistant",
-            path: "/apps/bluetooth",
-            description: "OBD-II Pro Diagnostics & Pairing.",
-            color: "bg-cyan-500",
-            isInternal: true
-        }
+
     ];
 
     const handleLogin = () => {
