@@ -100,6 +100,7 @@ const InventoryLive = () => {
     const [lastSyncTime, setLastSyncTime] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
     const [dbStatus, setDbStatus] = useState({ status: 'connecting', count: 0, error: null });
+    const [notification, setNotification] = useState(null);
 
     // Filtering & Sorting
     const [filter, setFilter] = useState('');
@@ -156,21 +157,31 @@ const InventoryLive = () => {
     const performSmartSync = useCallback(async () => {
         setIsSyncing(true);
         try {
+            // Attempt Remote Fetch
             const response = await fetch(`${DEFAULT_CSV_URL}?t=${Date.now()}`);
             if (!response.ok) throw new Error("Failed to fetch CSV");
+
             const text = await response.text();
             const parsed = parseCSV(text);
+
             if (parsed && parsed.length > 0) {
                 setCsvData(parsed);
                 setLastSyncTime(new Date().toLocaleString());
+                setNotification(null); // Clear offline notice
             } else {
-                console.warn("Parsed CSV Empty, using fallback");
-                setCsvData(parseCSV(RAW_VEHICLE_CSV || ""));
+                throw new Error("Parsed Remote CSV Empty");
             }
         } catch (error) {
-            console.error("Sync failed", error);
-            // Fallback
-            setCsvData(parseCSV(RAW_VEHICLE_CSV || ""));
+            console.error("Sync failed, switching to BACKUP mode", error);
+
+            // Fallback 1: Bundled Code Backup (RAW_VEHICLE_CSV)
+            const backupParsed = parseCSV(RAW_VEHICLE_CSV || "");
+            if (backupParsed.length > 0) {
+                setCsvData(backupParsed);
+                setNotification({ type: 'warning', message: 'Viewing Offline Backup Inventory' });
+            } else {
+                setNotification({ type: 'error', message: 'Critical Error: Unable to load any inventory.' });
+            }
         } finally {
             setIsSyncing(false);
         }
@@ -274,6 +285,22 @@ const InventoryLive = () => {
                                 {lastSyncTime && ` • Synced: ${lastSyncTime}`}
                             </p>
                         </div>
+                        {notification && (
+                            <div style={{
+                                backgroundColor: notification.type === 'error' ? '#fee2e2' : '#fef3c7',
+                                color: notification.type === 'error' ? '#991b1b' : '#92400e',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '0.375rem',
+                                fontSize: '0.875rem',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}>
+                                <AlertCircle size={16} />
+                                {notification.message}
+                            </div>
+                        )}
                     </div>
 
                     {/* Filters */}
