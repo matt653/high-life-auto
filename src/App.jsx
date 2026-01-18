@@ -60,7 +60,7 @@ function App() {
                   <Route path="/vehicle/:id" element={<VehicleDetailLive />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
-                  <Route path="/lab" element={<AIToolsDashboard />} />
+
                   <Route path="/apps/chatbot" element={<ChatBotApp />} />
 
                   <Route path="/apps/marketplace" element={<MarketplaceApp />} />
