@@ -1029,3 +1029,17 @@
 [2026-01-17 18:15:07] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
 [2026-01-17 18:15:07] Sync cycle complete.
 [2026-01-17 18:15:07] Next run scheduled for 01/17/2026 18:30:07 (in 0h 15m)
+[2026-01-17 18:30:07] Starting scheduled sync cycle...
+[2026-01-17 18:30:07] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-17 18:30:07] Updates detected for DealerCarSearch-1.csv
+[2026-01-17 18:30:07] Error copying DealerCarSearch-1.csv: The process cannot access the file 'C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed\DealerCarSearch-1.csv' because it is being used by another process.
+[2026-01-17 18:30:07] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-17 18:30:07] Sync cycle complete.
+[2026-01-17 18:30:07] Next run scheduled for 01/17/2026 18:45:07 (in 0h 15m)
+[2026-01-17 18:45:07] Starting scheduled sync cycle...
+[2026-01-17 18:45:07] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed
+[2026-01-17 18:45:07] Updates detected for DealerCarSearch-1.csv
+[2026-01-17 18:45:07] Error copying DealerCarSearch-1.csv: The process cannot access the file 'C:\Users\matt_\OneDrive\Desktop\AI Tools\AI - frazer feed\DealerCarSearch-1.csv' because it is being used by another process.
+[2026-01-17 18:45:07] Checking files for destination: C:\Users\matt_\OneDrive\Desktop\Upload to drive\Frazer feed - backup
+[2026-01-17 18:45:07] Sync cycle complete.
+[2026-01-17 18:45:07] Next run scheduled for 01/19/2026 08:00:00 (in 13h 14m)
