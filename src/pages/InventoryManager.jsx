@@ -84,17 +84,24 @@ const parseCSV = (csv) => {
 
 const InventoryManager = () => {
     // --- AutoGrader State ---
-    const [vehicles, setVehicles] = useState([]);
+    // --- AutoGrader State ---
+    // Optimistic Load: Start with bundled data instantly
+    const [vehicles, setVehicles] = useState(() => {
+        const raw = parseCSV(RAW_VEHICLE_CSV || "");
+        // Basic map to ensure ID exists
+        return raw.map(car => ({ ...car, id: car.vin || car.stockNumber }));
+    });
     const [editingVehicle, setEditingVehicle] = useState(null);
 
     // --- Firebase & State ---
-    const [csvData, setCsvData] = useState([]);
+    const [csvData, setCsvData] = useState(() => parseCSV(RAW_VEHICLE_CSV || ""));
     const [enhancements, setEnhancements] = useState({});
 
     // Auth & View Mode
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     // eslint-disable-next-line no-unused-vars
     const [viewMode, setViewMode] = useState('grid');
+
 
     const [googleSheetUrl, setGoogleSheetUrl] = useState(DEFAULT_CSV_URL);
     const [lastSyncTime, setLastSyncTime] = useState(null);

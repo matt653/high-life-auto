@@ -21,7 +21,7 @@ const EdmundsApp = lazy(() => import('./pages/EdmundsApp'));
 const BluetoothApp = lazy(() => import('./pages/BluetoothApp'));
 const MarketplaceApp = lazy(() => import('./pages/MarketplaceApp'));
 
-const InventoryManager = lazy(() => import('./pages/InventoryManager'));
+import InventoryManager from './pages/InventoryManager'; // Static import for instant load
 const StaffPortal = lazy(() => import('./pages/StaffPortal'));
 
 // Loading Fallback
