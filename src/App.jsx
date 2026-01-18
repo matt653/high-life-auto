@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SEOProvider from './components/SEOProvider';
 import StickyLeadBar from './components/StickyLeadBar';
+import ScrollToTop from './components/ScrollToTop';
 import SmartChatbot from './components/SmartChatbot';
 
 import { GarageProvider } from './context/GarageContext';
@@ -42,6 +43,7 @@ function App() {
     <SEOProvider>
       <GarageProvider>
         <Router>
+          <ScrollToTop />
           <div className="app">
             {isPublicLayout && <Navbar />}
             {isPublicLayout && <StickyLeadBar />}
