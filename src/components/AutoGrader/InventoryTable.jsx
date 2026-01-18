@@ -1,72 +1,62 @@
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './AutoGrader.css';
 
-const InventoryTable = ({ vehicles, onEdit }) => {
+const InventoryTable = ({ vehicles }) => {
     return (
         <div className="ag-table-container">
             <table className="ag-table">
                 <thead>
                     <tr>
-                        <th>Status</th>
-                        <th>Vehicle</th>
+                        <th style={{ width: '80px' }}>Photo</th>
+                        <th>Year Make Model</th>
+                        <th>Trim</th>
+                        <th>VIN</th>
                         <th>Stock #</th>
-                        <th>Price / Miles</th>
-                        <th>AI Content</th>
+                        <th>Price</th>
+                        <th>Mileage</th>
                         <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {vehicles.map((v) => (
-                        <tr key={v.vin}>
+                        <tr key={v.id || v.vin}>
                             <td>
-                                {v.aiGrade ? (
-                                    <span className="ag-badge ag-badge-green">
-                                        Graded
-                                    </span>
+                                {v.imageUrls && v.imageUrls[0] ? (
+                                    <img
+                                        src={v.imageUrls[0]}
+                                        alt="Thumbnail"
+                                        style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+                                    />
                                 ) : (
-                                    <span className="ag-badge ag-badge-gray">
-                                        New
-                                    </span>
+                                    <div style={{ width: '60px', height: '40px', background: '#e5e7eb', borderRadius: '4px' }} />
                                 )}
                             </td>
-                            <td>
-                                <div className="ag-vehicle-cell">
-                                    <div className="ag-vehicle-img">
-                                        <img src={v.imageUrls[0]} alt="" />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontWeight: 'bold', color: '#111827' }}>{v.year} {v.make}</div>
-                                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{v.model} {v.trim}</div>
-                                    </div>
-                                </div>
+                            <td style={{ fontWeight: 'bold' }}>
+                                {v.year} {v.make} {v.model}
                             </td>
-                            <td style={{ fontWeight: 'bold', color: '#374151', fontSize: '0.875rem' }}>
-                                {v.stockNumber}
+                            <td style={{ color: '#666' }}>{v.trim}</td>
+                            <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{v.vin}</td>
+                            <td style={{ fontWeight: 'bold' }}>{v.stockNumber}</td>
+                            <td style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                                ${Number(v.retail || 0).toLocaleString()}
                             </td>
-                            <td>
-                                <div style={{ fontWeight: '500', color: '#111827' }}>${v.retail}</div>
-                                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{Number(v.mileage).toLocaleString()} mi</div>
-                            </td>
-                            <td>
-                                {v.aiGrade ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#2563eb' }}>Grade: {v.aiGrade.overallGrade}</span>
-                                        <span style={{ fontSize: '0.75rem', color: '#9ca3af', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            Desc: {v.marketingDescription ? 'Ready' : 'Missing'}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontStyle: 'italic' }}>No analysis</span>
-                                )}
-                            </td>
+                            <td>{Number(v.mileage || 0).toLocaleString()}</td>
                             <td style={{ textAlign: 'right' }}>
-                                <button
-                                    onClick={() => onEdit(v)}
-                                    className="ag-btn-link"
+                                <Link
+                                    to={`/vehicle/${v.stockNumber}`}
+                                    target="_blank"
+                                    style={{
+                                        padding: '5px 10px',
+                                        backgroundColor: '#3b82f6',
+                                        color: 'white',
+                                        textDecoration: 'none',
+                                        borderRadius: '4px',
+                                        fontSize: '0.85rem'
+                                    }}
                                 >
-                                    Manage
-                                </button>
+                                    View Live
+                                </Link>
                             </td>
                         </tr>
                     ))}
