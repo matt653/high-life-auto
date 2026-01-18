@@ -5,6 +5,10 @@ import { useGarage } from '../context/GarageContext';
 import { RAW_VEHICLE_CSV } from '../components/AutoGrader/constants';
 import '../components/AutoGrader/AutoGrader.css';
 
+// Firebase Imports for LIVE UPDATES
+import { db, isFirebaseConfigured } from '../apps/ChatBot/services/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
+
 // -----------------------------------------------------------------------------
 // 1. FAST PARSER (Outcome: Sub-millisecond parsing)
 // -----------------------------------------------------------------------------
@@ -70,10 +74,12 @@ const parseCSV = (csv = "") => {
 // -----------------------------------------------------------------------------
 const InventoryLive = () => {
     // A. INSTANT LOAD
-    const [vehicles, setVehicles] = useState(() => {
+    const [baseVehicles, setBaseVehicles] = useState(() => {
         return parseCSV(RAW_VEHICLE_CSV);
     });
 
+    const [enhancements, setEnhancements] = useState({});
+    const [soldStates, setSoldStates] = useState({});
     const [filter, setFilter] = useState('');
     const [lastUpdated, setLastUpdated] = useState('Instant');
 
@@ -91,7 +97,7 @@ const InventoryLive = () => {
                     const text = await res.text();
                     const freshData = parseCSV(text);
                     if (freshData.length > 0) {
-                        setVehicles(freshData);
+                        setBaseVehicles(freshData);
                         setLastUpdated('Live Feed');
                     }
                 }
