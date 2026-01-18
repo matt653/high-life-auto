@@ -235,27 +235,42 @@ const InventoryManager = () => {
     const [missingVehicles, setMissingVehicles] = useState([]);
 
     const checkMissingVehicles = async (currentList) => {
-        // 1. Get Snapshot of "Active" vehicles from Firestore
+        if (!isFirebaseConfigured || currentList.length === 0) return;
+
+        // 1. Get Snapshot of "Active" or "Sold" vehicles from Firestore
         const snapshotRef = collection(db, 'inventory_state');
         const snapshot = await getDocs(snapshotRef);
 
         const currentVins = new Set(currentList.map(v => v.vin));
-        const missing = [];
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            // If it WAS active, but is NOT in current CSV, it's missing
-            if (data.status === 'active' && !currentVins.has(data.vin)) {
-                missing.push(data);
+        snapshot.forEach(async (docSnap) => {
+            const data = docSnap.data();
+            const vin = data.vin;
+
+            // RULE 1: If it's SOLD and > 24 hours have passed -> REMOVE (Archive)
+            if (data.status === 'sold' && data.soldAt) {
+                if (now - data.soldAt > TWENTY_FOUR_HOURS) {
+                    // Mark as removed (so it falls off the website entirely)
+                    await setDoc(doc(db, 'inventory_state', vin), {
+                        status: 'removed',
+                        removedAt: now
+                    }, { merge: true });
+                    console.log(`AUTO-CLEANUP: Removed sold vehicle ${vin}`);
+                }
+            }
+            // RULE 2: If it's ACTIVE in DB but MISSING from CSV -> Mark SOLD
+            else if (data.status === 'active' && !currentVins.has(vin)) {
+                await setDoc(doc(db, 'inventory_state', vin), {
+                    status: 'sold',
+                    soldAt: now
+                }, { merge: true });
+                console.log(`AUTO-SOLD: detected missing VIN ${vin}, marked as sold.`);
             }
         });
 
-        if (missing.length > 0) {
-            setMissingVehicles(missing);
-        }
-
-        // 2. Upsert Current Inventory as "Active"
-        // This ensures checking against the latest state next time
+        // 3. Upsert Current Inventory as "Active"
         currentList.forEach(vehicle => {
             if (vehicle.vin && vehicle.vin !== 'NO_VIN') {
                 const vRef = doc(db, 'inventory_state', vehicle.vin);
